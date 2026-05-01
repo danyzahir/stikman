@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Stickman Battle – Turn-Based RPG</title>
+<meta name="description" content="Game turn-based stickman battle. Lawan 10 musuh yang semakin kuat, kumpulkan koin, beli senjata di shop!"/>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ====== START SCREEN ====== -->
+<div id="startScreen" class="screen active">
+  <h1>STICKMAN<br>BATTLE</h1>
+  <p>10 Rounds · Turn-Based · Survive</p>
+  <button id="btnStart">&#9654; START GAME</button>
+</div>
+
+<!-- ====== META / CHARACTER SELECT ====== -->
+<div id="metaScreen" class="screen">
+  <div id="metaContent">
+    <div id="metaHeader">
+      <div class="meta-lv-badge">
+        <div class="lv-num" id="metaLevelNum">1</div>
+        <div class="lv-txt">LEVEL</div>
+      </div>
+      <div id="metaExpSection">
+        <div id="metaExpLabel">EXP: <span id="metaExpNum">0</span> / <span id="metaExpMax">100</span></div>
+        <div id="metaExpBarWrap"><div id="metaExpBar"></div></div>
+      </div>
+      <div id="metaCoinsBadge">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f0c040" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v1M12 15v1M9.5 10.5C9.5 9.1 10.6 8 12 8s2.5 1.1 2.5 2.5c0 1.2-1.5 1.8-2.5 1.8s-2.5.9-2.5 2.2S10.6 16 12 16s2.5-1.1 2.5-2.5"/></svg>
+        <span id="metaCoinsNum">0</span>
+      </div>
+    </div>
+    <div id="metaTitle">Choose Your Fighter</div>
+    <div id="metaMainContent" style="display:flex; width:100%; gap:20px; align-items:flex-start">
+      <!-- Left side: Characters -->
+      <div id="charSection" style="flex:1">
+        <div id="charGrid"></div>
+        <button id="btnFight">ENTER BATTLE (OFFLINE)</button>
+      </div>
+
+      <!-- Right side: Online Lobby -->
+      <div id="onlineLobby" style="width:280px; background:#111827; border:1px solid #ffffff15; border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:10px">
+        <div style="color:#f0c040; font-family:'Orbitron',sans-serif; font-size:1.1rem; text-align:center; border-bottom:1px solid #ffffff15; padding-bottom:10px">🟢 ONLINE PLAYERS</div>
+        <div id="onlineList" style="display:flex; flex-direction:column; gap:8px; min-height:150px; max-height:400px; overflow-y:auto">
+          <div style="color:#888; text-align:center; font-size:0.9rem; margin-top:20px">Connecting to Firebase...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== CHALLENGE MODAL ====== -->
+<div id="challengeModal" style="display:none; position:fixed; inset:0; background:#000000d0; z-index:300; justify-content:center; align-items:center; flex-direction:column">
+  <div style="background:#1a1a2e; padding:30px; border-radius:20px; border:2px solid #f0c040; text-align:center; max-width:400px">
+    <h2 style="color:#f0c040; margin-bottom:10px">CHALLENGE RECEIVED!</h2>
+    <p id="challengeText" style="color:#fff; margin-bottom:20px; font-size:1.1rem">PlayerName has challenged you to a battle!</p>
+    <div style="display:flex; gap:10px; justify-content:center">
+      <button id="btnAcceptChallenge" style="background:#66bb6a; color:#000; padding:10px 20px; border-radius:8px">ACCEPT</button>
+      <button id="btnDeclineChallenge" style="background:#ef5350; color:#fff; padding:10px 20px; border-radius:8px">DECLINE</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== GAME SCREEN ====== -->
+<div id="gameScreen" class="screen">
+  <!-- Header -->
+  <div id="header">
+    <div id="roundInfo">ROUND 1 / 10</div>
+    <div id="headerRight">
+      <div class="game-lv-badge">LV <span id="gameLevelNum">1</span></div>
+      <div id="expMiniWrap"><div id="expMiniBar"></div></div>
+      <div id="coinDisplay">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#f0c040" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v1M12 15v1M9.5 10.5C9.5 9.1 10.6 8 12 8s2.5 1.1 2.5 2.5c0 1.2-1.5 1.8-2.5 1.8s-2.5.9-2.5 2.2S10.6 16 12 16s2.5-1.1 2.5-2.5"/></svg>
+        <span id="coinAmount">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Arena -->
+  <div id="arena">
+    <div id="defendIndicator">🛡 DEFENDING</div>
+    <!-- Dice Displays -->
+    <div id="playerDice" class="dice-box" style="display:none">
+      <div class="dice-face">⚀</div>
+      <div class="dice-num">1</div>
+      <div class="dice-label">WEAK</div>
+    </div>
+    <div id="enemyDice" class="dice-box" style="display:none">
+      <div class="dice-face">⚀</div>
+      <div class="dice-num">1</div>
+      <div class="dice-label">WEAK</div>
+    </div>
+    <div id="fighters">
+      <!-- Player -->
+      <div class="fighter" id="playerFighter">
+        <div class="fighter-name" id="playerName">HERO</div>
+        <!-- Player Stickman SVG -->
+        <svg width="64" height="120" viewBox="0 0 64 120" fill="none" style="color:#4fc3f7">
+          <!-- Head -->
+          <circle cx="32" cy="16" r="13" stroke="currentColor" stroke-width="3" fill="#1a2a3a"/>
+          <!-- Eyes -->
+          <circle cx="27" cy="14" r="2.5" fill="currentColor"/>
+          <circle cx="37" cy="14" r="2.5" fill="currentColor"/>
+          <!-- Smile -->
+          <path d="M26 20 Q32 25 38 20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <!-- Body -->
+          <line x1="32" y1="29" x2="32" y2="72" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <!-- Arms -->
+          <line x1="32" y1="42" x2="8" y2="58" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <line x1="32" y1="42" x2="56" y2="36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <!-- Sword in right hand -->
+          <line x1="56" y1="36" x2="64" y2="12" stroke="#f0c040" stroke-width="4" stroke-linecap="round"/>
+          <line x1="52" y1="27" x2="64" y2="30" stroke="#f0c040" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- Legs -->
+          <line x1="32" y1="72" x2="14" y2="108" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <line x1="32" y1="72" x2="50" y2="108" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <!-- Mini HP bar under fighter -->
+        <div class="hp-bar-wrap" style="width:80px">
+          <div class="hp-bar" id="pHpBarSmall" style="width:100%"></div>
+        </div>
+      </div>
+
+      <!-- VS Text -->
+      <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:'Orbitron',sans-serif;color:#f0c04060;font-size:1.4rem;pointer-events:none">VS</div>
+
+      <!-- Enemy -->
+      <div class="fighter" id="enemyFighter">
+        <div class="fighter-name" id="enemyName">ENEMY</div>
+        <!-- Enemy Stickman SVG -->
+        <svg width="64" height="120" viewBox="0 0 64 120" fill="none" style="color:#ef5350;transform:scaleX(-1)">
+          <!-- Head -->
+          <circle cx="32" cy="16" r="13" stroke="currentColor" stroke-width="3" fill="#2a1a1a"/>
+          <!-- Evil eyes -->
+          <path d="M24 12 L30 15" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M34 12 L40 15" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- Frown -->
+          <path d="M26 22 Q32 17 38 22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <!-- Horns -->
+          <line x1="22" y1="5" x2="18" y2="-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="42" y1="5" x2="46" y2="-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- Body -->
+          <line x1="32" y1="29" x2="32" y2="72" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <!-- Arms -->
+          <line x1="32" y1="42" x2="8" y2="58" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <line x1="32" y1="42" x2="56" y2="36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <!-- Axe -->
+          <line x1="56" y1="36" x2="64" y2="14" stroke="#888" stroke-width="4" stroke-linecap="round"/>
+          <ellipse cx="64" cy="10" rx="7" ry="5" stroke="#ef5350" stroke-width="2.5" fill="#2a1a1a"/>
+          <!-- Legs -->
+          <line x1="32" y1="72" x2="14" y2="108" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <line x1="32" y1="72" x2="50" y2="108" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <!-- Mini HP bar under fighter -->
+        <div class="hp-bar-wrap" style="width:80px">
+          <div class="hp-bar" id="eHpBarSmall" style="width:100%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Cards -->
+  <div id="statusSection">
+    <div class="status-card" id="playerStatus">
+      <div class="status-title">Your Status</div>
+      <div class="stat-row">
+        <span class="stat-lbl"><svg viewBox="0 0 24 24" width="14" height="14" fill="#ef5350"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg> HP</span>
+        <span class="stat-val big-hp" id="pHp">100/100</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-lbl"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#f0c040" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l2-2 3 3-2 2-3-3z"/><line x1="2" y1="22" x2="5" y2="19"/></svg> ATK</span>
+        <span class="stat-val" id="pAtk">18</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-lbl"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#42a5f5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> DEF</span>
+        <span class="stat-val" id="pDef">5</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-lbl"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#66bb6a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v5.5L5 15a5 5 0 0 0 14 0l-5-6.5V3"/></svg> Potion</span>
+        <span class="stat-val" id="pPot">3</span>
+      </div>
+      <div class="hp-bar-wrap" style="margin-top:8px">
+        <div class="hp-bar" id="pHpBar" style="width:100%"></div>
+      </div>
+    </div>
+    <div class="status-card" id="enemyStatus">
+      <div class="status-title">Enemy Status</div>
+      <div class="stat-row">
+        <span class="stat-lbl"><svg viewBox="0 0 24 24" width="14" height="14" fill="#ef5350"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg> HP</span>
+        <span class="stat-val big-hp" id="eHpText">-/-</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-lbl"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#f0c040" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l2-2 3 3-2 2-3-3z"/><line x1="2" y1="22" x2="5" y2="19"/></svg> ATK</span>
+        <span class="stat-val" id="eAtk">-</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-lbl"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#42a5f5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> DEF</span>
+        <span class="stat-val" id="eDef">-</span>
+      </div>
+      <div class="hp-bar-wrap" style="margin-top:8px">
+        <div class="hp-bar" id="eHpBar" style="width:100%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div id="actionsSection">
+    <button class="action-btn" id="btnAttack">
+      <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l2-2 3 3-2 2-3-3z"/><line x1="2" y1="22" x2="5" y2="19"/></svg>
+      <span>ATTACK</span>
+    </button>
+    <button class="action-btn" id="btnDefend">
+      <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+      <span>DEFEND</span>
+    </button>
+    <button class="action-btn" id="btnHeal">
+      <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v5.5L5 15a5 5 0 0 0 14 0l-5-6.5V3"/><circle cx="10" cy="17" r="1.5" fill="currentColor" stroke="none"/><circle cx="14" cy="15" r="1" fill="currentColor" stroke="none"/></svg>
+      <span>HEAL <span class="pot-count">(3)</span></span>
+    </button>
+    <button class="action-btn" id="btnShop">
+      <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      <span>SHOP</span>
+    </button>
+  </div>
+
+  <!-- Battle Log -->
+  <div id="logSection"></div>
+</div>
+
+<!-- ====== SHOP OVERLAY ====== -->
+<div id="shopOverlay">
+  <div id="shopPanel">
+    <h2>⚙ ARMORY SHOP</h2>
+    <p class="subtitle" id="shopCoins">⚙ 0 Coins</p>
+    <div class="shop-grid" id="shopGrid"></div>
+    <button id="btnCloseShop">✕ Close Shop</button>
+  </div>
+</div>
+
+<!-- ====== ROUND BANNER ====== -->
+<div id="roundBanner">
+  <div id="roundBannerText">ROUND 1</div>
+</div>
+
+<!-- ====== END SCREEN ====== -->
+<div id="endScreen" class="screen">
+  <div id="endTitle" class="victory">VICTORY!</div>
+  <p id="endMsg">You won!</p>
+  <button id="btnRestart" style="margin-bottom:10px">&#8634; PLAY AGAIN</button><br>
+  <button id="btnToMeta" style="background:#1a1a2e;border:1px solid #ffffff30;color:#888;padding:10px 28px;border-radius:8px;font-size:.9rem;cursor:pointer;font-family:Rajdhani,sans-serif;font-weight:700;letter-spacing:1px">&#8962; CHARACTER SELECT</button>
+</div>
+
+<script type="module" src="game.js"></script>
+</body>
+</html>
