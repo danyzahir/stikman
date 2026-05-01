@@ -807,14 +807,14 @@ function buildShopUI() {
   let html = '';
   s.weapons.forEach((w,i) => {
     const canBuy = G.coins >= w.cost;
-    html += `<div class="shop-item"><div class="shop-icon si-weapon">${SVG.sword}</div><div class="shop-name">${w.n}</div><div class="shop-desc">${w.d}</div><button class="shop-buy" onclick="buyWeapon(${i})" ${canBuy?'':'disabled'}>${SVG.coin} ${w.cost}</button></div>`;
+    html += `<div class="shop-item"><div class="shop-icon si-weapon">${SVG.sword}</div><div class="shop-item-info"><div class="shop-name">${w.n}</div><div class="shop-desc">${w.d}</div></div><button class="shop-buy" onclick="buyWeapon(${i})" ${canBuy?'':'disabled'}>${SVG.coin} ${w.cost}</button></div>`;
   });
   s.armors.forEach((a,i) => {
     const canBuy = G.coins >= a.cost;
-    html += `<div class="shop-item"><div class="shop-icon si-armor">${SVG.shield}</div><div class="shop-name">${a.n}</div><div class="shop-desc">${a.d}</div><button class="shop-buy" onclick="buyArmor(${i})" ${canBuy?'':'disabled'}>${SVG.coin} ${a.cost}</button></div>`;
+    html += `<div class="shop-item"><div class="shop-icon si-armor">${SVG.shield}</div><div class="shop-item-info"><div class="shop-name">${a.n}</div><div class="shop-desc">${a.d}</div></div><button class="shop-buy" onclick="buyArmor(${i})" ${canBuy?'':'disabled'}>${SVG.coin} ${a.cost}</button></div>`;
   });
   const pot = s.potions;
-  html += `<div class="shop-item"><div class="shop-icon si-potion">${SVG.potion}</div><div class="shop-name">${pot.n}</div><div class="shop-desc">${pot.d}</div><button class="shop-buy" onclick="buyPotion()" ${G.coins>=pot.cost?'':'disabled'}>${SVG.coin} ${pot.cost}</button></div>`;
+  html += `<div class="shop-item"><div class="shop-icon si-potion">${SVG.potion}</div><div class="shop-item-info"><div class="shop-name">${pot.n}</div><div class="shop-desc">${pot.d}</div></div><button class="shop-buy" onclick="buyPotion()" ${G.coins>=pot.cost?'':'disabled'}>${SVG.coin} ${pot.cost}</button></div>`;
   $('shopGrid').innerHTML = html;
   $('shopCoins').innerHTML = `${SVG.coin} <b>${G.coins}</b> Coins`;
 }

@@ -231,54 +231,6 @@ button:disabled{opacity:.4;cursor:not-allowed}
 
 /* RESPONSIVE DESIGN (MOBILE & TABLET) */
 @media (max-width: 992px) {
-  /* Game Screen */
-  #header {
-    flex-direction: column;
-    gap: 12px;
-    align-items: center;
-  }
-  #headerRight {
-    width: 100%;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  #arena {
-    padding: 15px 10px;
-  }
-  #fighters {
-    padding: 0 10px;
-    height: 120px;
-  }
-  #playerSvgWrap svg, #enemySvgWrap svg {
-    height: 90px;
-    width: auto;
-  }
-  .hp-bar-wrap {
-    width: 80px;
-  }
-  #statusSection {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-  #actionsSection {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .action-btn {
-    min-width: unset;
-    max-width: unset;
-    padding: 10px 8px;
-    font-size: 0.8rem;
-  }
-  #btnSurrender {
-    grid-column: span 2;
-  }
-  #btnFight {
-    width: 100%;
-    padding: 14px 20px;
-  }
-
   /* Meta Screen */
   #metaMainContent {
     flex-direction: column;
@@ -308,11 +260,82 @@ button:disabled{opacity:.4;cursor:not-allowed}
 
   /* Shop */
   #shopPanel {
-    padding: 20px;
-    width: 90vw;
+    padding: 16px;
+    width: 94vw;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+  }
+  #shopPanel h2 {
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+  }
+  #shopPanel .subtitle {
+    font-size: .82rem;
+    margin-bottom: 12px;
   }
   .shop-grid {
     grid-template-columns: 1fr;
+    gap: 8px;
+    overflow-y: auto;
+    max-height: 55vh;
+    padding-right: 4px;
+  }
+  .shop-grid::-webkit-scrollbar {
+    width: 3px;
+  }
+  .shop-grid::-webkit-scrollbar-thumb {
+    background: #f0c04060;
+    border-radius: 3px;
+  }
+  .shop-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    text-align: left;
+    border-radius: 10px;
+  }
+  .shop-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    margin: 0;
+    border-radius: 10px;
+    padding: 6px;
+  }
+  .shop-icon svg {
+    width: 24px !important;
+    height: 24px !important;
+  }
+  .shop-item-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .shop-name {
+    font-size: .88rem;
+    margin-bottom: 1px;
+  }
+  .shop-desc {
+    font-size: .72rem;
+    margin-bottom: 0;
+  }
+  .shop-buy {
+    padding: 6px 14px;
+    font-size: .78rem;
+    white-space: nowrap;
+    width: auto;
+    min-width: 70px;
+    flex-shrink: 0;
+    border-radius: 8px;
+  }
+  #btnCloseShop {
+    margin-top: 10px;
+    padding: 10px;
+    font-size: .9rem;
+    flex-shrink: 0;
   }
 
   /* Login Screen */
