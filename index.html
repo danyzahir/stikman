@@ -54,18 +54,18 @@
       </div>
     </div>
     <div id="metaTitle">Choose Your Fighter</div>
-    <div id="metaMainContent" style="display:flex; width:100%; gap:20px; align-items:flex-start">
+    <div id="metaMainContent">
       <!-- Left side: Characters -->
-      <div id="charSection" style="flex:1">
+      <div id="charSection">
         <div id="charGrid"></div>
         <button id="btnFight">ENTER BATTLE (OFFLINE)</button>
       </div>
 
       <!-- Right side: Online Lobby -->
-      <div id="onlineLobby" style="width:280px; background:#111827; border:1px solid #ffffff15; border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:10px">
-        <div style="color:#f0c040; font-family:'Orbitron',sans-serif; font-size:1.1rem; text-align:center; border-bottom:1px solid #ffffff15; padding-bottom:10px">🟢 ONLINE PLAYERS</div>
-        <div id="onlineList" style="display:flex; flex-direction:column; gap:8px; min-height:150px; max-height:400px; overflow-y:auto">
-          <div style="color:#888; text-align:center; font-size:0.9rem; margin-top:20px">Connecting to Firebase...</div>
+      <div id="onlineLobby">
+        <div class="lobby-header">🟢 ONLINE PLAYERS</div>
+        <div id="onlineList">
+          <div class="lobby-status">Connecting to Firebase...</div>
         </div>
       </div>
     </div>

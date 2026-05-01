@@ -215,8 +215,109 @@ button:disabled{opacity:.4;cursor:not-allowed}
 #btnFight:hover{transform:scale(1.06);box-shadow:0 0 40px #f0c040}
 
 /* MINI EXP IN GAME HEADER */
+/* EXP MINI BAR */
 #headerRight{display:flex;align-items:center;gap:10px}
 .game-lv-badge{background:linear-gradient(135deg,#7c4dff,#e040fb);border-radius:8px;padding:3px 10px;font-family:'Orbitron',sans-serif;font-size:.72rem;color:#fff;font-weight:700;white-space:nowrap}
 #expMiniWrap{width:70px;height:6px;background:#1a1a2e;border-radius:3px;overflow:hidden;border:1px solid #ffffff15}
 #expMiniBar{height:100%;background:linear-gradient(90deg,#7c4dff,#e040fb);border-radius:3px;transition:width .4s ease;width:0%}
+
+/* META MAIN CONTENT & LOBBY */
+#metaMainContent {display:flex; flex-wrap:wrap; width:100%; gap:20px; align-items:flex-start}
+#charSection {flex:1; min-width:300px; width:100%}
+#onlineLobby {flex:1; min-width:280px; max-width:100%; background:#111827; border:1px solid #ffffff15; border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:10px}
+.lobby-header {color:#f0c040; font-family:'Orbitron',sans-serif; font-size:1.1rem; text-align:center; border-bottom:1px solid #ffffff15; padding-bottom:10px}
+#onlineList {display:flex; flex-direction:column; gap:8px; min-height:150px; max-height:400px; overflow-y:auto}
+.lobby-status {color:#888; text-align:center; font-size:0.9rem; margin-top:20px}
+
+/* RESPONSIVE DESIGN (MOBILE & TABLET) */
+@media (max-width: 992px) {
+  /* Game Screen */
+  #header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+  #headerRight {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  #arena {
+    padding: 15px 10px;
+  }
+  #fighters {
+    padding: 0 10px;
+    height: 120px;
+  }
+  #playerSvgWrap svg, #enemySvgWrap svg {
+    height: 90px;
+    width: auto;
+  }
+  .hp-bar-wrap {
+    width: 80px;
+  }
+  #statusSection {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  #actionsSection {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .action-btn {
+    min-width: unset;
+    max-width: unset;
+    padding: 10px 8px;
+    font-size: 0.8rem;
+  }
+  #btnSurrender {
+    grid-column: span 2;
+  }
+  #btnFight {
+    width: 100%;
+    padding: 14px 20px;
+  }
+
+  /* Meta Screen */
+  #metaMainContent {
+    flex-direction: column;
+  }
+  #charSection {
+    min-width: 100%;
+  }
+  #onlineLobby {
+    width: 100%;
+    min-width: 100%;
+  }
+  #metaHeader {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 10px;
+    padding: 14px 10px;
+  }
+  .meta-lv-badge {
+    align-self: center;
+  }
+  #metaCoinsBadge {
+    align-self: center;
+    justify-content: center;
+  }
+
+  /* Shop */
+  #shopPanel {
+    padding: 20px;
+    width: 90vw;
+  }
+  .shop-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Login Screen */
+  #startScreen h1 {
+    font-size: 2.2rem;
+  }
+}
+
 
