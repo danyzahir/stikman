@@ -9,8 +9,28 @@
 </head>
 <body>
 
+<!-- ====== LOGIN / REGISTER SCREEN ====== -->
+<div id="loginScreen" class="screen active" style="flex-direction:column; justify-content:center; align-items:center">
+  <h1 style="color:#f0c040; margin-bottom:10px; font-size:3rem">STICKMAN<br>BATTLE</h1>
+  <p id="authSubtitle" style="color:#888; margin-bottom:20px">Login to your account</p>
+  
+  <div id="authForm" style="display:flex; flex-direction:column; gap:10px; width:100%; max-width:300px">
+    <input type="email" id="emailInput" placeholder="Email Address" style="display:none; padding:12px; border-radius:8px; border:2px solid #ffffff30; background:#1a1a2e; color:#fff; font-size:1.1rem; outline:none; text-align:center; font-family:'Rajdhani',sans-serif; font-weight:bold" autocomplete="off" />
+    <input type="text" id="usernameInput" placeholder="Username" style="padding:12px; border-radius:8px; border:2px solid #ffffff30; background:#1a1a2e; color:#fff; font-size:1.1rem; outline:none; text-align:center; font-family:'Rajdhani',sans-serif; font-weight:bold" autocomplete="off" />
+    <input type="password" id="passwordInput" placeholder="Password" style="padding:12px; border-radius:8px; border:2px solid #ffffff30; background:#1a1a2e; color:#fff; font-size:1.1rem; outline:none; text-align:center; font-family:'Rajdhani',sans-serif; font-weight:bold" autocomplete="off" />
+    <button id="btnSubmitAuth" style="padding:12px 24px">LOGIN</button>
+  </div>
+  
+  <p id="loginStatus" style="color:#66bb6a; margin-top:15px; font-size:0.9rem; display:none"></p>
+  
+  <div style="margin-top:20px; font-size:0.9rem; color:#888">
+    <span id="authToggleText">Don't have an account?</span> 
+    <a href="#" id="btnToggleAuth" style="color:#4fc3f7; text-decoration:none; font-weight:bold">Register Here</a>
+  </div>
+</div>
+
 <!-- ====== START SCREEN ====== -->
-<div id="startScreen" class="screen active">
+<div id="startScreen" class="screen">
   <h1>STICKMAN<br>BATTLE</h1>
   <p>10 Rounds · Turn-Based · Survive</p>
   <button id="btnStart">&#9654; START GAME</button>
@@ -98,6 +118,7 @@
       <div class="fighter" id="playerFighter">
         <div class="fighter-name" id="playerName">HERO</div>
         <!-- Player Stickman SVG -->
+        <div id="playerSvgWrap">
         <svg width="64" height="120" viewBox="0 0 64 120" fill="none" style="color:#4fc3f7">
           <!-- Head -->
           <circle cx="32" cy="16" r="13" stroke="currentColor" stroke-width="3" fill="#1a2a3a"/>
@@ -118,6 +139,7 @@
           <line x1="32" y1="72" x2="14" y2="108" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
           <line x1="32" y1="72" x2="50" y2="108" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
         </svg>
+        </div>
         <!-- Mini HP bar under fighter -->
         <div class="hp-bar-wrap" style="width:80px">
           <div class="hp-bar" id="pHpBarSmall" style="width:100%"></div>
@@ -131,6 +153,7 @@
       <div class="fighter" id="enemyFighter">
         <div class="fighter-name" id="enemyName">ENEMY</div>
         <!-- Enemy Stickman SVG -->
+        <div id="enemySvgWrap">
         <svg width="64" height="120" viewBox="0 0 64 120" fill="none" style="color:#ef5350;transform:scaleX(-1)">
           <!-- Head -->
           <circle cx="32" cy="16" r="13" stroke="currentColor" stroke-width="3" fill="#2a1a1a"/>
@@ -154,6 +177,7 @@
           <line x1="32" y1="72" x2="14" y2="108" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
           <line x1="32" y1="72" x2="50" y2="108" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
         </svg>
+        </div>
         <!-- Mini HP bar under fighter -->
         <div class="hp-bar-wrap" style="width:80px">
           <div class="hp-bar" id="eHpBarSmall" style="width:100%"></div>

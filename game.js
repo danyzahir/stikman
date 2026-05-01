@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, onDisconnect, remove, push } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+import { getDatabase, ref, set, onValue, onDisconnect, remove, push, get, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBwooreBGBy9WcLylZL8IZJabmoGLjqqf8",
@@ -12,21 +12,35 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-let myUserId = "user_" + Math.random().toString(36).substr(2, 9);
+let myUserId = ""; // Will be set after login
 
 // ========== PERSISTENT META STATE ==========
 const defaultMeta = {
   username: '', coins: 0, level: 1, exp: 0, expToNext: 100,
   ownedChars: [0], selectedChar: 0
 };
-let META = JSON.parse(localStorage.getItem('stickman_save')) || defaultMeta;
-if(!META.username) {
-  META.username = prompt("Welcome! Enter your username to save progress:") || "Guest_" + Math.floor(Math.random()*1000);
-  saveData();
-}
+let META = { ...defaultMeta };
 
 function saveData() {
-  localStorage.setItem('stickman_save', JSON.stringify(META));
+  if(myUserId) {
+    set(ref(db, 'playerData/' + myUserId), META);
+  }
+}
+
+// Presence logic wrapped to be called after login
+function initFirebasePresence() {
+  const myUserRef = ref(db, 'users/' + myUserId);
+  const connectedRef = ref(db, '.info/connected');
+  onValue(connectedRef, (snap) => {
+    if (snap.val() === true) {
+      onDisconnect(myUserRef).remove();
+      set(myUserRef, { username: META.username, level: META.level, lastActive: Date.now() });
+    }
+  });
+
+  setInterval(() => {
+    set(myUserRef, { username: META.username, level: META.level, lastActive: Date.now() });
+  }, 10000);
 }
 
 // ========== CHARACTERS ==========
@@ -43,24 +57,8 @@ const CHARS = [
     svg:`<svg viewBox="0 0 64 110" fill="none" width="54" height="90"><circle cx="32" cy="14" r="12" stroke="#ffd54f" stroke-width="2.5" fill="#1a1800"/><circle cx="27" cy="12" r="2" fill="#ffd54f"/><circle cx="37" cy="12" r="2" fill="#ffd54f"/><circle cx="32" cy="2" r="6" stroke="#ffd54f" stroke-width="1.5" fill="none"/><line x1="32" y1="-4" x2="32" y2="8" stroke="#ffd54f" stroke-width="1.5"/><line x1="26" y1="2" x2="38" y2="2" stroke="#ffd54f" stroke-width="1.5"/><line x1="32" y1="26" x2="32" y2="68" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/><line x1="32" y1="40" x2="10" y2="54" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/><line x1="32" y1="40" x2="54" y2="34" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/><line x1="54" y1="34" x2="60" y2="10" stroke="#ffd54f" stroke-width="3.5" stroke-linecap="round"/><line x1="50" y1="24" x2="62" y2="27" stroke="#ffd54f" stroke-width="2" stroke-linecap="round"/><line x1="32" y1="68" x2="16" y2="102" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/><line x1="32" y1="68" x2="48" y2="102" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/></svg>` }
 ];
 
-// Firebase Presence & Challenges
-const myUserRef = ref(db, 'users/' + myUserId);
 const allUsersRef = ref(db, 'users');
 const challengesRef = ref(db, 'challenges');
-
-// When connected to Firebase, set status to online and remove on disconnect
-const connectedRef = ref(db, '.info/connected');
-onValue(connectedRef, (snap) => {
-  if (snap.val() === true) {
-    onDisconnect(myUserRef).remove();
-    set(myUserRef, { username: META.username, level: META.level, lastActive: Date.now() });
-  }
-});
-
-// Update presence every 10 seconds to keep alive
-setInterval(() => {
-  set(myUserRef, { username: META.username, level: META.level, lastActive: Date.now() });
-}, 10000);
 
 let onlinePlayers = {};
 onValue(allUsersRef, (snap) => {
@@ -128,7 +126,7 @@ onValue(challengesRef, (snap) => {
     }
     // I sent a challenge and it was accepted
     if(ch.from === myUserId && ch.status === 'accepted' && currentChallengeId === cid) {
-      alert(`${ch.to} accepted! Entering Battle!`);
+      // Remove blocking alert to prevent race condition
       startPvp(cid, ch.to, true); // true = host
       currentChallengeId = null;
     }
@@ -141,9 +139,242 @@ onValue(challengesRef, (snap) => {
   }
 });
 
+let currentBattleId = null;
+let isPvpHost = false;
+let myPlayerKey = null; // 'p1' or 'p2'
+let oppPlayerKey = null; // 'p2' or 'p1'
+let battleRef = null;
+let lastProcessedAction = null;
+
 function startPvp(battleId, opponentUid, isHost) {
-  alert("PVP Battle Mode! (Under Construction)");
-  // Here we would switch to the game screen and attach realtime listeners to the battle node
+  currentBattleId = battleId;
+  isPvpHost = isHost;
+  myPlayerKey = isHost ? 'p1' : 'p2';
+  oppPlayerKey = isHost ? 'p2' : 'p1';
+  battleRef = ref(db, 'battles/' + battleId);
+  lastProcessedAction = null;
+
+  const myChar = CHARS.find(c => c.id === META.selectedChar) || CHARS[0];
+
+  if (isHost) {
+    update(battleRef, {
+      round: 1,
+      turn: 'p1',
+      p1: { uid: myUserId, name: META.username, charId: myChar.id, hp: myChar.hp, maxHp: myChar.hp, atk: myChar.atk, def: myChar.def, potions: myChar.potions, defending: false }
+    }).catch(err => alert("Firebase Error: " + err.message + "\n\nPastikan Rules Firebase untuk node 'battles' sudah di-set ke true!"));
+  } else {
+    update(battleRef, {
+      p2: { uid: myUserId, name: META.username, charId: myChar.id, hp: myChar.hp, maxHp: myChar.hp, atk: myChar.atk, def: myChar.def, potions: myChar.potions, defending: false }
+    }).catch(err => alert("Firebase Error: " + err.message + "\n\nPastikan Rules Firebase untuk node 'battles' sudah di-set ke true!"));
+  }
+
+  onValue(battleRef, (snap) => {
+    const b = snap.val();
+    if (!b) return;
+    updatePvpUI(b);
+  });
+  
+  showScreen('game');
+  clearLog();
+  $('btnShop').style.display = 'none';
+  log("⚔️ PVP BATTLE STARTED! Awaiting opponent...", 'log-system');
+  setButtons(true);
+}
+
+async function updatePvpUI(b) {
+  const myState = b[myPlayerKey];
+  const oppState = b[oppPlayerKey];
+  
+  if(!myState || !oppState) return; // Wait until BOTH players have written their stats
+
+  // Init SVG on first frame
+  if(b.round === 1 && !lastProcessedAction) {
+    const mC = CHARS.find(x => x.id === myState.charId) || CHARS[0];
+    const oC = CHARS.find(x => x.id === oppState.charId) || CHARS[0];
+    $('playerSvgWrap').innerHTML = mC.svg;
+    $('enemySvgWrap').innerHTML = oC.svg;
+    $('playerFighter').classList.add('idle-anim');
+    $('enemyFighter').classList.add('idle-anim');
+    $('playerName').textContent = myState.name;
+    $('enemyName').textContent = oppState.name;
+    log(`PVP MATCH: <b>${myState.name}</b> vs <b>${oppState.name}</b>`, 'log-system');
+    lastProcessedAction = 'started';
+  }
+
+  // Update Stats
+  $('pHp').textContent = `${myState.hp} / ${myState.maxHp}`;
+  $('pAtk').textContent = myState.atk;
+  $('pDef').textContent = myState.def;
+  $('pPot').textContent = myState.potions;
+  $('pHpBar').style.width = Math.max(0, myState.hp/myState.maxHp*100) + '%';
+  $('pHpBar').style.background = hpColor(myState.hp, myState.maxHp);
+
+  $('eHpText').textContent = `${oppState.hp} / ${oppState.maxHp}`;
+  $('eAtk').textContent = oppState.atk;
+  $('eDef').textContent = oppState.def;
+  $('eHpBar').style.width = Math.max(0, oppState.hp/oppState.maxHp*100) + '%';
+  $('eHpBar').style.background = hpColor(oppState.hp, oppState.maxHp);
+
+  // Play animation if new action
+  if(b.lastAction && b.lastAction.id !== lastProcessedAction && lastProcessedAction !== 'started') {
+    lastProcessedAction = b.lastAction.id;
+    await playPvpAnimation(b.lastAction);
+  }
+
+  if(b.lastAction && b.lastAction.id !== lastProcessedAction && lastProcessedAction === 'started') {
+      lastProcessedAction = b.lastAction.id;
+  }
+
+  // Check Win/Loss
+  if (myState.hp <= 0 || oppState.hp <= 0) {
+    setButtons(true);
+    setTimeout(() => {
+      showScreen('end');
+      $('btnToMeta').style.display = 'block';
+      if(myState.hp <= 0 && oppState.hp <= 0) {
+        $('endTitle').textContent = 'DRAW';
+        $('endMsg').textContent = `Both players died.`;
+      }
+      else if(myState.hp <= 0) {
+        $('endTitle').textContent = 'DEFEAT';
+        $('endTitle').className = 'defeat';
+        $('endMsg').textContent = `You were defeated by ${oppState.name}.`;
+      } else {
+        $('endTitle').textContent = 'VICTORY';
+        $('endTitle').className = 'victory';
+        $('endMsg').textContent = `You defeated ${oppState.name}!`;
+      }
+      currentBattleId = null;
+      if(isPvpHost) remove(battleRef);
+    }, 2000);
+    return;
+  }
+
+  // Toggle buttons
+  if(b.turn === myPlayerKey) setButtons(false);
+  else setButtons(true);
+}
+
+async function playPvpAnimation(act) {
+  const isMe = act.by === myPlayerKey;
+  const attackerDiv = isMe ? $('playerFighter') : $('enemyFighter');
+  const defenderDiv = isMe ? $('enemyFighter') : $('playerFighter');
+  const popupX = isMe ? 520 : 120;
+  const healX = isMe ? 120 : 520;
+  
+  if(act.type === 'attack') {
+    const roll = act.roll || 1;
+    const rollColorClass = roll >= 5 ? 'dice-crit' : roll >= 3 ? 'dice-ok' : 'dice-weak';
+    showDice(isMe ? 'player' : 'enemy', roll, DICE_LABEL[roll], rollColorClass);
+    await animateDice(isMe ? 'playerDice' : 'enemyDice', roll);
+    await delay(200);
+
+    attackerDiv.classList.add(isMe ? 'player-attack-anim' : 'enemy-attack-anim');
+    await delay(200);
+    
+    if (act.dmg > 0) defenderDiv.classList.add('hit-anim');
+    
+    if (act.blockedDmg > 0) {
+      if (act.dmg === 0) {
+        log(`[PVP] 🎲 <b>${act.byName}</b> rolled <b>${roll}</b>! Defender <b class="dmg-blue">COMPLETELY BLOCKED</b> the attack!`, 'log-system');
+        showPopup('BLOCKED!', popupX, 'dmg-blue');
+      } else {
+        log(`[PVP] 🎲 <b>${act.byName}</b> rolled <b>${roll}</b>! Shield blocked ${act.blockedDmg}, took <b class="dmg-red">${act.dmg} DMG</b>!`, 'log-system');
+        showPopup(`-${act.dmg}`, popupX, 'dmg-red');
+      }
+    } else {
+      log(`[PVP] 🎲 <b>${act.byName}</b> rolled <b>${roll}</b>! Attacked for <b class="${act.crit?'dmg-red':''}">${act.dmg} DMG</b>!`, isMe ? 'log-player' : 'log-enemy');
+      showPopup(`-${act.dmg}`, popupX, 'dmg-red');
+    }
+    
+    await delay(300);
+    attackerDiv.classList.remove('player-attack-anim', 'enemy-attack-anim');
+    defenderDiv.classList.remove('hit-anim');
+    hideDice();
+  } else if (act.type === 'defend') {
+    const roll = act.roll || 1;
+    const rollColorClass = roll >= 5 ? 'dice-crit' : roll >= 3 ? 'dice-ok' : 'dice-weak';
+    showDice(isMe ? 'player' : 'enemy', roll, DICE_LABEL[roll], rollColorClass + ' dice-defend');
+    await animateDice(isMe ? 'playerDice' : 'enemyDice', roll);
+    await delay(200);
+
+    attackerDiv.classList.add('defend-anim');
+    log(`[PVP] 🎲 <b>${act.byName}</b> rolled <b>${roll}</b> to DEFEND!`, 'log-defend');
+    await delay(400);
+    attackerDiv.classList.remove('defend-anim');
+    hideDice();
+  } else if (act.type === 'heal') {
+    attackerDiv.classList.add('heal-anim');
+    showPopup(`+${act.dmg}`, healX, 'dmg-green');
+    log(`[PVP] 💊 <b>${act.byName}</b> used a potion! (+${act.dmg} HP)`, 'log-heal');
+    await delay(400);
+    attackerDiv.classList.remove('heal-anim');
+  }
+}
+
+async function doPvpAction(type) {
+  setButtons(true);
+  const snap = await get(battleRef);
+  const b = snap.val();
+  const myState = b[myPlayerKey];
+  const oppState = b[oppPlayerKey];
+  
+  let dmg = 0;
+  let crit = false;
+  let roll = 0;
+  let blockedDmg = 0;
+
+  if (type === 'attack') {
+    myState.defending = false;
+    roll = rollDice();
+    const mult = DICE_MULT[roll];
+    crit = roll >= 5;
+    
+    let baseDmg = Math.max(1, myState.atk - oppState.def);
+    let rawDmg = Math.max(1, Math.round(baseDmg * mult));
+    
+    if (oppState.defending && oppState.defendRoll) {
+      const blockPct = BLOCK_PCT[oppState.defendRoll];
+      blockedDmg = Math.round(rawDmg * blockPct);
+      dmg = Math.max(0, rawDmg - blockedDmg);
+      oppState.defending = false;
+      oppState.defendRoll = 0;
+    } else {
+      dmg = rawDmg;
+    }
+    oppState.hp = Math.max(0, oppState.hp - dmg);
+  } else if (type === 'defend') {
+    roll = rollDice();
+    myState.defending = true;
+    myState.defendRoll = roll;
+  } else if (type === 'heal') {
+    myState.defending = false;
+    if(myState.potions <= 0) {
+      alert("No potions left!");
+      setButtons(false);
+      return;
+    }
+    myState.potions--;
+    dmg = 40;
+    myState.hp = Math.min(myState.maxHp, myState.hp + dmg);
+  }
+
+  const updates = {};
+  updates[myPlayerKey] = myState;
+  updates[oppPlayerKey] = oppState;
+  updates.turn = oppPlayerKey;
+  updates.lastAction = {
+    id: Date.now(),
+    by: myPlayerKey,
+    byName: myState.name,
+    type: type,
+    dmg: dmg,
+    crit: crit,
+    roll: roll,
+    blockedDmg: blockedDmg
+  };
+
+  await set(battleRef, { ...b, ...updates });
 }
 
 // ========== GAME STATE ==========
@@ -165,7 +396,7 @@ function spawnEnemy(round) {
 
 // ========== DOM ==========
 const $ = id => document.getElementById(id);
-const screens = { start: $('startScreen'), meta: $('metaScreen'), game: $('gameScreen'), end: $('endScreen') };
+const screens = { login: $('loginScreen'), start: $('startScreen'), meta: $('metaScreen'), game: $('gameScreen'), end: $('endScreen') };
 
 function showScreen(s) {
   Object.values(screens).forEach(sc => sc.classList.remove('active'));
@@ -586,7 +817,7 @@ window.selectOrBuyChar = function(id) {
   showMetaScreen();
 }
 
-// ========== START ==========
+// ========== START OFFLINE ==========
 async function startGame() {
   const ch = CHARS.find(c => c.id === META.selectedChar) || CHARS[0];
   Object.assign(G, { round:1, coins:0, playerTurn:true, defending:false, busy:false,
@@ -595,9 +826,11 @@ async function startGame() {
   G.enemy = spawnEnemy(1);
   showScreen('game');
   clearLog();
+  $('btnShop').style.display = 'flex';
   log(`⚡ Round 1 begins! <b>${G.enemy.name}</b> appears!`, 'log-system');
   log(`🧐 Playing as <b style="color:${ch.color}">${ch.name}</b>`, 'log-system');
   renderAll();
+  $('playerSvgWrap').innerHTML = ch.svg;
   $('playerFighter').classList.add('idle-anim');
   $('enemyFighter').classList.add('idle-anim');
   await delay(200);
@@ -605,17 +838,93 @@ async function startGame() {
 }
 
 // ========== EVENTS ==========
+let isLoginMode = true;
+
+$('btnToggleAuth').onclick = (e) => {
+  e.preventDefault();
+  isLoginMode = !isLoginMode;
+  if(isLoginMode) {
+    $('authSubtitle').textContent = "Login to your account";
+    $('emailInput').style.display = "none";
+    $('btnSubmitAuth').textContent = "LOGIN";
+    $('authToggleText').textContent = "Don't have an account?";
+    $('btnToggleAuth').textContent = "Register Here";
+  } else {
+    $('authSubtitle').textContent = "Create a new account";
+    $('emailInput').style.display = "block";
+    $('btnSubmitAuth').textContent = "REGISTER";
+    $('authToggleText').textContent = "Already have an account?";
+    $('btnToggleAuth').textContent = "Login Here";
+  }
+};
+
+$('btnSubmitAuth').onclick = async () => {
+  const uname = $('usernameInput').value.trim();
+  const email = $('emailInput').value.trim();
+  const pass = $('passwordInput').value.trim();
+  
+  if(!uname) return alert("Please enter a username!");
+  if(!pass) return alert("Please enter a password!");
+  if(!isLoginMode && !email) return alert("Please enter an email address!");
+  
+  // Format username to be a safe Firebase key
+  myUserId = uname.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase(); 
+  if(!myUserId) return alert("Invalid username format!");
+
+  $('btnSubmitAuth').disabled = true;
+  $('loginStatus').style.display = 'block';
+  $('loginStatus').textContent = isLoginMode ? 'Checking account...' : 'Creating account...';
+
+  const authSnap = await get(ref(db, 'usersAuth/' + myUserId));
+  
+  if(isLoginMode) {
+    // LOGIN
+    if(!authSnap.exists()) {
+      $('btnSubmitAuth').disabled = false;
+      $('loginStatus').style.display = 'none';
+      return alert("Username not found! Please register first.");
+    }
+    const authData = authSnap.val();
+    // Simple Base64 decoding check
+    if(authData.password !== btoa(pass)) {
+      $('btnSubmitAuth').disabled = false;
+      $('loginStatus').style.display = 'none';
+      return alert("Incorrect password!");
+    }
+
+    const snap = await get(ref(db, 'playerData/' + myUserId));
+    if(snap.exists()) META = snap.val();
+    else META = { ...defaultMeta, username: uname };
+  } else {
+    // REGISTER
+    if(authSnap.exists()) {
+      $('btnSubmitAuth').disabled = false;
+      $('loginStatus').style.display = 'none';
+      return alert("Username already taken! Try another one or Login.");
+    }
+    // Save to usersAuth (Encode password simple base64)
+    await set(ref(db, 'usersAuth/' + myUserId), { email: email, username: uname, password: btoa(pass) });
+    // Initialize fresh player data
+    META = { ...defaultMeta, username: uname };
+    saveData();
+  }
+
+  $('loginStatus').textContent = "Success! Entering game...";
+  initFirebasePresence();
+  showScreen('start');
+};
+
 $('btnStart').onclick = () => showMetaScreen();
 $('btnFight').onclick = startGame;
-$('btnRestart').onclick = startGame;
+$('btnRestart').onclick = () => showScreen('meta');
 $('btnToMeta').onclick = showMetaScreen;
-$('btnAttack').onclick = doAttack;
-$('btnDefend').onclick = doDefend;
-$('btnHeal').onclick = doHeal;
+
+$('btnAttack').onclick = () => currentBattleId ? doPvpAction('attack') : doAttack();
+$('btnDefend').onclick = () => currentBattleId ? doPvpAction('defend') : doDefend();
+$('btnHeal').onclick = () => currentBattleId ? doPvpAction('heal') : doHeal();
+
 $('btnShop').onclick = openShop;
 $('btnCloseShop').onclick = closeShop;
 
 // Init
-showMetaScreen();
-$('startScreen').classList.add('active');
-$('metaScreen').classList.remove('active');
+showScreen('login');
