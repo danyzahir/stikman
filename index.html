@@ -73,16 +73,79 @@
 </div>
 
 <!-- ====== CHALLENGE MODAL ====== -->
-<div id="challengeModal" style="display:none; position:fixed; inset:0; background:#000000d0; z-index:300; justify-content:center; align-items:center; flex-direction:column">
-  <div style="background:#1a1a2e; padding:30px; border-radius:20px; border:2px solid #f0c040; text-align:center; max-width:400px">
-    <h2 style="color:#f0c040; margin-bottom:10px">CHALLENGE RECEIVED!</h2>
-    <p id="challengeText" style="color:#fff; margin-bottom:20px; font-size:1.1rem">PlayerName has challenged you to a battle!</p>
-    <div style="display:flex; gap:10px; justify-content:center">
-      <button id="btnAcceptChallenge" style="background:#66bb6a; color:#000; padding:10px 20px; border-radius:8px">ACCEPT</button>
-      <button id="btnDeclineChallenge" style="background:#ef5350; color:#fff; padding:10px 20px; border-radius:8px">DECLINE</button>
+<div id="challengeModal" style="display:none; position:fixed; inset:0; background:#000000d0; z-index:300; justify-content:center; align-items:center; flex-direction:column; backdrop-filter:blur(4px)">
+  <div style="background:linear-gradient(145deg, #1a1a2e, #111122); padding:40px; border-radius:24px; border:2px solid #f0c040; text-align:center; max-width:400px; box-shadow:0 10px 40px #f0c04040; animation:popIn 0.3s ease-out">
+    <div style="font-size:3rem; margin-bottom:10px">⚔️</div>
+    <h2 style="color:#f0c040; margin-bottom:10px; font-family:'Orbitron', sans-serif">CHALLENGE RECEIVED!</h2>
+    <p id="challengeText" style="color:#fff; margin-bottom:30px; font-size:1.2rem; font-family:'Rajdhani', sans-serif"><b>PlayerName</b> has challenged you to a battle!</p>
+    <div style="display:flex; gap:15px; justify-content:center">
+      <button id="btnAcceptChallenge" style="background:linear-gradient(90deg, #43a047, #66bb6a); color:#fff; padding:12px 24px; border-radius:12px; font-weight:bold; font-size:1.1rem; cursor:pointer; border:none; box-shadow:0 4px 15px #66bb6a60">ACCEPT</button>
+      <button id="btnDeclineChallenge" style="background:linear-gradient(90deg, #c62828, #ef5350); color:#fff; padding:12px 24px; border-radius:12px; font-weight:bold; font-size:1.1rem; cursor:pointer; border:none; box-shadow:0 4px 15px #ef535060">DECLINE</button>
     </div>
   </div>
 </div>
+
+<!-- ====== WAITING MODAL ====== -->
+<div id="waitingModal" style="display:none; position:fixed; inset:0; background:#000000d0; z-index:300; justify-content:center; align-items:center; flex-direction:column; backdrop-filter:blur(4px)">
+  <div style="background:#1a1a2e; padding:40px; border-radius:24px; border:2px solid #4fc3f7; text-align:center; max-width:400px; box-shadow:0 10px 40px #4fc3f740; animation:popIn 0.3s ease-out">
+    <div style="margin-bottom:20px; display:inline-block">
+      <svg class="spinning-svg" viewBox="0 0 24 24" width="50" height="50" stroke="#4fc3f7" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="2" x2="12" y2="6"></line>
+        <line x1="12" y1="18" x2="12" y2="22"></line>
+        <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+        <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+        <line x1="2" y1="12" x2="6" y2="12"></line>
+        <line x1="18" y1="12" x2="22" y2="12"></line>
+        <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+        <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+      </svg>
+    </div>
+    <h2 style="color:#4fc3f7; margin-bottom:10px; font-family:'Orbitron', sans-serif">WAITING FOR OPPONENT</h2>
+    <p id="waitingText" style="color:#fff; margin-bottom:30px; font-size:1.2rem; font-family:'Rajdhani', sans-serif">Waiting for <b>PlayerName</b> to accept...</p>
+    <button id="btnCancelChallenge" style="background:linear-gradient(90deg, #c62828, #ef5350); color:#fff; padding:10px 20px; border-radius:8px; font-weight:bold; cursor:pointer; border:none">CANCEL</button>
+  </div>
+</div>
+
+<!-- ====== CUSTOM TOAST ====== -->
+<div id="customToast" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#111; border-left:4px solid #f0c040; color:#fff; padding:16px 24px; border-radius:8px; z-index:400; box-shadow:0 4px 20px rgba(0,0,0,0.5); font-family:'Rajdhani', sans-serif; font-size:1.1rem; align-items:center; gap:10px; animation:slideDown 0.3s ease-out">
+  <span id="toastIcon">ℹ️</span>
+  <span id="toastMsg">Message</span>
+</div>
+
+<!-- ====== SURRENDER MODAL ====== -->
+<div id="surrenderModal" style="display:none; position:fixed; inset:0; background:#000000d0; z-index:350; justify-content:center; align-items:center; flex-direction:column; backdrop-filter:blur(4px)">
+  <div style="background:linear-gradient(145deg, #2a0a0a, #1a0505); padding:40px; border-radius:24px; border:2px solid #ef5350; text-align:center; max-width:400px; box-shadow:0 10px 40px #ef535040; animation:popIn 0.3s ease-out">
+    <div style="margin-bottom:20px; display:inline-block">
+      <svg viewBox="0 0 24 24" width="60" height="60" fill="none" stroke="#ef5350" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+        <line x1="4" y1="22" x2="4" y2="15"></line>
+      </svg>
+    </div>
+    <h2 style="color:#ef5350; margin-bottom:10px; font-family:'Orbitron', sans-serif">SURRENDER?</h2>
+    <p style="color:#fff; margin-bottom:30px; font-size:1.2rem; font-family:'Rajdhani', sans-serif">Are you sure you want to flee? You will immediately lose this match!</p>
+    <div style="display:flex; gap:15px; justify-content:center">
+      <button id="btnConfirmSurrender" style="background:linear-gradient(90deg, #c62828, #ef5350); color:#fff; padding:12px 24px; border-radius:12px; font-weight:bold; font-size:1.1rem; cursor:pointer; border:none; box-shadow:0 4px 15px #ef535060">YES, FLEE</button>
+      <button id="btnCancelSurrender" style="background:#333; color:#fff; padding:12px 24px; border-radius:12px; font-weight:bold; font-size:1.1rem; cursor:pointer; border:none">NO, FIGHT</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.spinning-svg {
+  animation: spin 1.5s linear infinite;
+}
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+@keyframes popIn {
+  0% { transform:scale(0.8); opacity:0; }
+  100% { transform:scale(1); opacity:1; }
+}
+@keyframes slideDown {
+  0% { transform:translate(-50%, -20px); opacity:0; }
+  100% { transform:translate(-50%, 0); opacity:1; }
+}
+</style>
 
 <!-- ====== GAME SCREEN ====== -->
 <div id="gameScreen" class="screen">
@@ -247,6 +310,13 @@
     <button class="action-btn" id="btnShop">
       <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
       <span>SHOP</span>
+    </button>
+    <button class="action-btn" id="btnSurrender" style="background:linear-gradient(135deg, #4a1c1c, #b71c1c)">
+      <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+        <line x1="4" y1="22" x2="4" y2="15"></line>
+      </svg>
+      <span>SURREND</span>
     </button>
   </div>
 

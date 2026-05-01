@@ -27,6 +27,15 @@ function saveData() {
   }
 }
 
+let myCurrentStatus = 'idle';
+
+function setMyStatus(status) {
+  myCurrentStatus = status;
+  if(myUserId) {
+    set(ref(db, 'users/' + myUserId), { username: META.username, level: META.level, lastActive: Date.now(), status: myCurrentStatus });
+  }
+}
+
 // Presence logic wrapped to be called after login
 function initFirebasePresence() {
   const myUserRef = ref(db, 'users/' + myUserId);
@@ -34,13 +43,22 @@ function initFirebasePresence() {
   onValue(connectedRef, (snap) => {
     if (snap.val() === true) {
       onDisconnect(myUserRef).remove();
-      set(myUserRef, { username: META.username, level: META.level, lastActive: Date.now() });
+      set(myUserRef, { username: META.username, level: META.level, lastActive: Date.now(), status: myCurrentStatus });
     }
   });
 
   setInterval(() => {
-    set(myUserRef, { username: META.username, level: META.level, lastActive: Date.now() });
+    set(myUserRef, { username: META.username, level: META.level, lastActive: Date.now(), status: myCurrentStatus });
   }, 10000);
+}
+
+function showToast(msg, isError = false) {
+  const t = $('customToast');
+  $('toastIcon').textContent = isError ? '❌' : '✅';
+  t.style.borderLeftColor = isError ? '#ef5350' : '#f0c040';
+  $('toastMsg').innerHTML = msg;
+  t.style.display = 'flex';
+  setTimeout(() => { t.style.display = 'none'; }, 3000);
 }
 
 // ========== CHARACTERS ==========
@@ -77,12 +95,20 @@ function renderOnlineLobby() {
     const p = onlinePlayers[uid];
     if(now - p.lastActive > 20000) continue; // Skip if inactive for 20s
     count++;
-    list.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:#1a1a2e; padding:10px; border-radius:8px">
+    
+    let btnHtml = '';
+    if (p.status === 'duel') {
+      btnHtml = `<button style="background:#555; color:#aaa; border:none; padding:6px 12px; border-radius:6px; cursor:not-allowed; font-weight:bold" disabled>Sedang Duel</button>`;
+    } else {
+      btnHtml = `<button style="background:linear-gradient(90deg, #c62828, #ef5350); color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold; box-shadow:0 2px 10px #ef535060" onclick="sendChallenge('${uid}', '${p.username}')">⚔️ Challenge</button>`;
+    }
+
+    list.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:#1a1a2e; padding:12px; border-radius:12px; border:1px solid #ffffff15">
       <div>
-        <div style="color:#fff; font-weight:bold">${p.username}</div>
-        <div style="color:#888; font-size:0.8rem">Level ${p.level}</div>
+        <div style="color:#fff; font-weight:bold; font-size:1.1rem">${p.username}</div>
+        <div style="color:#888; font-size:0.85rem">Level ${p.level} <span style="margin-left:5px; color:${p.status==='duel'?'#ef5350':'#66bb6a'}">• ${p.status==='duel'?'In Battle':'Idle'}</span></div>
       </div>
-      <button style="background:#ef5350; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer" onclick="sendChallenge('${uid}', '${p.username}')">⚔️</button>
+      ${btnHtml}
     </div>`;
   }
   if(count === 0) list.innerHTML = `<div style="color:#888; text-align:center; margin-top:20px">No one is online.</div>`;
@@ -100,7 +126,16 @@ window.sendChallenge = function(targetUid, targetName) {
     to: targetUid,
     status: 'pending'
   });
-  alert(`Challenge sent to ${targetName}! Waiting for response...`);
+  
+  $('waitingText').innerHTML = `Waiting for <b>${targetName}</b> to accept...`;
+  $('waitingModal').style.display = 'flex';
+  
+  $('btnCancelChallenge').onclick = () => {
+    remove(ref(db, 'challenges/' + challengeId));
+    $('waitingModal').style.display = 'none';
+    currentChallengeId = null;
+    showToast("Challenge cancelled.");
+  };
 }
 
 onValue(challengesRef, (snap) => {
@@ -108,9 +143,9 @@ onValue(challengesRef, (snap) => {
   for(let cid in challenges) {
     const ch = challenges[cid];
     // Incoming challenge
-    if(ch.to === myUserId && ch.status === 'pending') {
+    if(ch.to === myUserId && ch.status === 'pending' && myCurrentStatus === 'idle') {
       currentChallengeId = cid;
-      $('challengeText').textContent = `${ch.fromName} has challenged you!`;
+      $('challengeText').innerHTML = `<b>${ch.fromName}</b> has challenged you to a battle!`;
       $('challengeModal').style.display = 'flex';
       
       // Setup buttons
@@ -122,17 +157,19 @@ onValue(challengesRef, (snap) => {
       $('btnDeclineChallenge').onclick = () => {
         set(ref(db, 'challenges/' + cid + '/status'), 'declined');
         $('challengeModal').style.display = 'none';
+        currentChallengeId = null;
       };
     }
     // I sent a challenge and it was accepted
     if(ch.from === myUserId && ch.status === 'accepted' && currentChallengeId === cid) {
-      // Remove blocking alert to prevent race condition
+      $('waitingModal').style.display = 'none';
       startPvp(cid, ch.to, true); // true = host
       currentChallengeId = null;
     }
     // I sent a challenge and it was declined
     if(ch.from === myUserId && ch.status === 'declined' && currentChallengeId === cid) {
-      alert(`Challenge declined.`);
+      $('waitingModal').style.display = 'none';
+      showToast(`Challenge declined by opponent.`, true);
       remove(ref(db, 'challenges/' + cid));
       currentChallengeId = null;
     }
@@ -153,6 +190,7 @@ function startPvp(battleId, opponentUid, isHost) {
   oppPlayerKey = isHost ? 'p2' : 'p1';
   battleRef = ref(db, 'battles/' + battleId);
   lastProcessedAction = null;
+  setMyStatus('duel');
 
   const myChar = CHARS.find(c => c.id === META.selectedChar) || CHARS[0];
 
@@ -161,11 +199,11 @@ function startPvp(battleId, opponentUid, isHost) {
       round: 1,
       turn: 'p1',
       p1: { uid: myUserId, name: META.username, charId: myChar.id, hp: myChar.hp, maxHp: myChar.hp, atk: myChar.atk, def: myChar.def, potions: myChar.potions, defending: false }
-    }).catch(err => alert("Firebase Error: " + err.message + "\n\nPastikan Rules Firebase untuk node 'battles' sudah di-set ke true!"));
+    }).catch(err => showToast("Firebase Error: " + err.message, true));
   } else {
     update(battleRef, {
       p2: { uid: myUserId, name: META.username, charId: myChar.id, hp: myChar.hp, maxHp: myChar.hp, atk: myChar.atk, def: myChar.def, potions: myChar.potions, defending: false }
-    }).catch(err => alert("Firebase Error: " + err.message + "\n\nPastikan Rules Firebase untuk node 'battles' sudah di-set ke true!"));
+    }).catch(err => showToast("Firebase Error: " + err.message, true));
   }
 
   onValue(battleRef, (snap) => {
@@ -179,6 +217,7 @@ function startPvp(battleId, opponentUid, isHost) {
   $('btnShop').style.display = 'none';
   log("⚔️ PVP BATTLE STARTED! Awaiting opponent...", 'log-system');
   setButtons(true);
+  $('btnSurrender').disabled = false;
 }
 
 async function updatePvpUI(b) {
@@ -245,6 +284,7 @@ async function updatePvpUI(b) {
         $('endMsg').textContent = `You defeated ${oppState.name}!`;
       }
       currentBattleId = null;
+      setMyStatus('idle');
       if(isPvpHost) remove(battleRef);
     }, 2000);
     return;
@@ -309,6 +349,9 @@ async function playPvpAnimation(act) {
     log(`[PVP] 💊 <b>${act.byName}</b> used a potion! (+${act.dmg} HP)`, 'log-heal');
     await delay(400);
     attackerDiv.classList.remove('heal-anim');
+  } else if (act.type === 'surrender') {
+    log(`[PVP] 🏳️ <b>${act.byName}</b> has surrendered the match!`, 'log-system');
+    await delay(400);
   }
 }
 
@@ -377,6 +420,51 @@ async function doPvpAction(type) {
   await set(battleRef, { ...b, ...updates });
 }
 
+function doSurrender() {
+  if (G.busy || (!currentBattleId && !G.playerTurn)) return;
+  $('surrenderModal').style.display = 'flex';
+}
+
+async function confirmSurrender() {
+  $('surrenderModal').style.display = 'none';
+  $('btnSurrender').disabled = true;
+  setButtons(true);
+  G.busy = true;
+  
+  if (currentBattleId) {
+    // PVP surrender
+    const snap = await get(battleRef);
+    const b = snap.val();
+    if (!b) return;
+    const myState = b[myPlayerKey];
+    myState.hp = 0; // kill self
+    
+    const updates = {};
+    updates[myPlayerKey] = myState;
+    updates.lastAction = {
+      id: Date.now(),
+      by: myPlayerKey,
+      byName: myState.name,
+      type: 'surrender',
+      dmg: 0,
+      crit: false,
+      roll: 1,
+      blockedDmg: 0
+    };
+    await set(battleRef, { ...b, ...updates });
+  } else {
+    // Offline surrender
+    log(`🏃 🏳️ <b>You</b> fled from the battle!`, 'log-system');
+    await delay(500);
+    gameOver();
+  }
+}
+
+$('btnCancelSurrender').onclick = () => {
+  $('surrenderModal').style.display = 'none';
+};
+$('btnConfirmSurrender').onclick = confirmSurrender;
+
 // ========== GAME STATE ==========
 const G = {
   round: 1, maxRound: 10, coins: 0,
@@ -395,7 +483,7 @@ function spawnEnemy(round) {
 }
 
 // ========== DOM ==========
-const $ = id => document.getElementById(id);
+function $(id) { return document.getElementById(id); }
 const screens = { login: $('loginScreen'), start: $('startScreen'), meta: $('metaScreen'), game: $('gameScreen'), end: $('endScreen') };
 
 function showScreen(s) {
@@ -664,7 +752,9 @@ async function winRound() {
 }
 
 function setButtons(disabled) {
-  ['btnAttack','btnDefend','btnHeal'].forEach(id => $(id).disabled = disabled);
+  ['btnAttack','btnDefend','btnHeal'].forEach(id => {
+    if($(id)) $(id).disabled = disabled;
+  });
 }
 
 function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
@@ -756,12 +846,14 @@ function gameOver() {
   $('endTitle').textContent = 'DEFEAT';
   $('endTitle').className = 'defeat';
   $('endMsg').textContent = `You fell in Round ${G.round}. Coins & Level kept. Train harder!`;
+  setMyStatus('idle');
   showScreen('end');
 }
 function victory() {
   $('endTitle').textContent = 'VICTORY!';
   $('endTitle').className = 'victory';
   $('endMsg').textContent = `All ${G.maxRound} rounds conquered! You are the champion!`;
+  setMyStatus('idle');
   showScreen('end');
 }
 
@@ -825,6 +917,7 @@ async function startGame() {
   });
   G.enemy = spawnEnemy(1);
   showScreen('game');
+  setMyStatus('duel');
   clearLog();
   $('btnShop').style.display = 'flex';
   log(`⚡ Round 1 begins! <b>${G.enemy.name}</b> appears!`, 'log-system');
@@ -834,7 +927,9 @@ async function startGame() {
   $('playerFighter').classList.add('idle-anim');
   $('enemyFighter').classList.add('idle-anim');
   await delay(200);
-  G.busy = false; setButtons(false);
+  G.busy = false; 
+  setButtons(false);
+  $('btnSurrender').disabled = false;
 }
 
 // ========== EVENTS ==========
@@ -922,6 +1017,7 @@ $('btnToMeta').onclick = showMetaScreen;
 $('btnAttack').onclick = () => currentBattleId ? doPvpAction('attack') : doAttack();
 $('btnDefend').onclick = () => currentBattleId ? doPvpAction('defend') : doDefend();
 $('btnHeal').onclick = () => currentBattleId ? doPvpAction('heal') : doHeal();
+$('btnSurrender').onclick = doSurrender;
 
 $('btnShop').onclick = openShop;
 $('btnCloseShop').onclick = closeShop;
