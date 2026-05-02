@@ -224,7 +224,7 @@ $('turnIndicator').style.color=isMyTurn?'#f0c040':'#888';
 $('btnRollDice').disabled=!isMyTurn;
 
 // Dice
-if(r.lastDice&&r.lastDice[0]>0){$('dice1').textContent=dieFace(r.lastDice[0]);$('dice2').textContent=dieFace(r.lastDice[1]);}
+if(r.lastDice&&r.lastDice[0]>0){$('dice1').innerHTML=dieFace(r.lastDice[0]);$('dice2').innerHTML=dieFace(r.lastDice[1]);}
 
 // Clear old tokens
 document.querySelectorAll('.player-token').forEach(x=>x.remove());
@@ -294,7 +294,7 @@ let _tickIv=setInterval(()=>SFX.diceTick(),90);
 await delay(700);
 clearInterval(_tickIv);
 $('dice1').classList.remove('rolling');$('dice2').classList.remove('rolling');
-$('dice1').textContent=dieFace(d1);$('dice2').textContent=dieFace(d2);
+$('dice1').innerHTML=dieFace(d1);$('dice2').innerHTML=dieFace(d2);
 SFX.diceLand();
 if(d1===d2)SFX.diceCrit();
 $('dice1').classList.add('settled');$('dice2').classList.add('settled');

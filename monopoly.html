@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Monopoly Online – Multiplayer Board Game</title>
 <meta name="description" content="Game Monopoli online multiplayer. Main bareng teman secara real-time! Beli properti, bayar sewa, dan jadilah yang terkaya!"/>
-<link rel="stylesheet" href="monopoly.css?v=2"/>
+<link rel="stylesheet" href="monopoly.css?v=9"/>
 </head>
 <body>
 
@@ -72,32 +72,38 @@
 
 <!-- ====== GAME SCREEN ====== -->
 <div id="gameScreen" class="screen">
-  <!-- Top bar -->
-  <div class="game-top-bar">
-    <div class="turn-indicator" id="turnIndicator">YOUR TURN</div>
-    <div class="dice-area">
-      <div class="dice-display" id="dice1"></div>
-      <div class="dice-display" id="dice2"></div>
-      <button id="btnRollDice">ROLL DICE</button>
-    </div>
-  </div>
+  <div class="game-main-layout">
+    <!-- Left: Board Section -->
+    <div class="board-section">
+      <div class="game-top-bar">
+        <div class="turn-indicator" id="turnIndicator">YOUR TURN</div>
+        <div class="dice-area">
+          <div class="dice-display" id="dice1"></div>
+          <div class="dice-display" id="dice2"></div>
+          <button id="btnRollDice">ROLL DICE</button>
+        </div>
+      </div>
 
-  <!-- Board -->
-  <div class="board-scroll-area" style="width: 100%; overflow: auto; padding: 4px 0;">
-    <div class="board-wrapper">
-      <div class="board-grid" id="boardGrid"></div>
-      <div class="board-center">
-        <div class="board-center-title"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-top:-5px"><path d="M6 16v-6a6 6 0 0112 0v6M4 16h16M7 20h10v-4H7v4z"/></svg> MONOPOLY</div>
-        <div class="board-center-sub">ONLINE</div>
+      <div class="board-scroll-area">
+        <div class="board-wrapper">
+          <div class="board-grid" id="boardGrid"></div>
+          <div class="board-center">
+            <div class="board-center-title"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-top:-5px"><path d="M6 16v-6a6 6 0 0112 0v6M4 16h16M7 20h10v-4H7v4z"/></svg> MONOPOLY</div>
+            <div class="board-center-sub">ONLINE</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: UI Sidebar -->
+    <div class="game-sidebar">
+      <div class="players-panel" id="playersPanel"></div>
+      <div id="gameLog"></div>
+      <div class="game-controls">
+         <button id="btnManageProps" class="ctrl-btn">MANAGE PROPERTIES</button>
       </div>
     </div>
   </div>
-
-  <!-- Players panel -->
-  <div class="players-panel" id="playersPanel"></div>
-
-  <!-- Game log -->
-  <div id="gameLog"></div>
 </div>
 
 <!-- ====== BUY PROPERTY MODAL ====== -->
@@ -133,6 +139,6 @@
   <button id="btnBackToLobby">BACK TO LOBBY</button>
 </div>
 
-<script type="module" src="monopoly.js?v=4"></script>
+<script type="module" src="monopoly.js?v=5"></script>
 </body>
 </html>
