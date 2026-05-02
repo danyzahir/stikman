@@ -215,20 +215,28 @@ pKeys.forEach((pk,i)=>{
 const p=r.players[pk];if(p.bankrupt)return;
 const cell=document.getElementById('cell-'+p.pos);if(!cell){return;}
 const tok=document.createElement('div');tok.className='player-token p'+i;
+if(r._walkingPlayer===pk)tok.classList.add('walking');
 cell.appendChild(tok);});
 
-// Owner dots
+// Owner dots + level stars
 if(r.properties){for(let tid in r.properties){
-const owner=r.properties[tid];const pi=pKeys.indexOf(owner);
+const ownerVal=r.properties[tid];
+let owner=ownerVal, level=1;
+if(typeof ownerVal==='object'){owner=ownerVal.uid;level=ownerVal.level||1;}
+const pi=pKeys.indexOf(owner);
 const cell=document.getElementById('cell-'+tid);if(!cell||pi<0)continue;
 const dot=document.createElement('div');dot.className='cell-owner-dot';dot.style.background=PCOLORS[pi];
-cell.appendChild(dot);}}
+cell.appendChild(dot);
+if(level>1){
+const lv=document.createElement('div');lv.className='cell-level'+(level===3?' lv3':' lv2');
+lv.textContent='★'.repeat(level);cell.appendChild(lv);}
+}}
 
 // Players panel
 let ph='';
 pKeys.forEach((pk,i)=>{const p=r.players[pk];
 const active=pk===currentTurn&&!p.bankrupt;
-const propCount=r.properties?Object.values(r.properties).filter(x=>x===pk).length:0;
+const propCount=r.properties?Object.values(r.properties).filter(x=>{const uid=typeof x==='object'?x.uid:x;return uid===pk;}).length:0;
 ph+=`<div class="player-card ${active?'active-turn':''} ${p.bankrupt?'bankrupt':''}">
 <div class="pc-header"><div class="pc-dot" style="background:${PCOLORS[i]}"></div><div class="pc-name">${p.name}${pk===myUserId?' (You)':''}</div></div>
 <div class="pc-money">$${p.money}</div>
@@ -276,17 +284,24 @@ while(r.players[pKeys[next]]?.bankrupt&&next!==r.turnIndex){next=(next+1)%pKeys.
 await update(roomRef,{[`players/${myUserId}`]:me,lastDice:[d1,d2],turnIndex:next,turnPlayer:pKeys[next]});return;}}
 }
 
-// Move
-let newPos=(me.pos+total)%32;
-// Pass START bonus
-if(newPos<me.pos)me.money+=200;
-me.pos=newPos;
+// Move with walking animation
+let oldPos=me.pos;
+let newPos=(oldPos+total)%32;
+if(newPos<oldPos)me.money+=200;
 
+// Step-by-step walk
+await update(roomRef,{_walkingPlayer:myUserId});
+for(let step=1;step<=total;step++){
+me.pos=(oldPos+step)%32;
+await update(roomRef,{[`players/${myUserId}/pos`]:me.pos,lastDice:[d1,d2]});
+await delay(150);}
+await update(roomRef,{_walkingPlayer:null});
+
+me.pos=newPos;
 const tile=TILES[newPos];
-await update(roomRef,{[`players/${myUserId}`]:me,lastDice:[d1,d2]});
 addLog(`🎲 ${me.name} rolled ${d1}+${d2}=${total}, landed on ${tile.name}`,'glog-system');
 
-await delay(400);
+await delay(200);
 await handleTile(tile,me,r,pKeys);
 };
 
@@ -317,27 +332,42 @@ addLog(`❓ ${ch}`,'glog-chance');}
 await update(roomRef,{[`players/${myUserId}`]:me});await nextTurn(r,pKeys);return;}
 
 if(tile.type==='prop'){
-const owner=(r.properties||{})[tile.id];
+const propData=(r.properties||{})[tile.id];
+let owner=null,level=1;
+if(propData){if(typeof propData==='object'){owner=propData.uid;level=propData.level||1;}else{owner=propData;level=1;}}
+
 if(!owner){
-// Offer to buy
 const buy=await showBuyModal(tile);
 if(buy&&me.money>=tile.price){me.money-=tile.price;
 SFX.coinSound();
-await update(roomRef,{[`players/${myUserId}`]:me,[`properties/${tile.id}`]:myUserId});
+await update(roomRef,{[`players/${myUserId}`]:me,[`properties/${tile.id}`]:{uid:myUserId,level:1}});
 addLog(`🏠 ${me.name} bought ${tile.name} for $${tile.price}!`,'glog-buy');}
 else addLog(`⏭️ ${me.name} skipped ${tile.name}`,'glog-system');
 }else if(owner!==myUserId){
-// Pay rent
+// Pay rent (multiplied by level)
 const ownerData=r.players[owner];
-const sameGroup=Object.entries(r.properties||{}).filter(([tid,o])=>o===owner&&TILES[tid].group===tile.group).length;
-let rent=tile.rent*Math.max(1,sameGroup);
+const sameGroup=Object.entries(r.properties||{}).filter(([tid,o])=>{
+const oUid=typeof o==='object'?o.uid:o;
+return oUid===owner&&TILES[tid].group===tile.group;}).length;
+const LEVEL_MULT=[0,1,2.5,5];
+let rent=Math.round(tile.rent*Math.max(1,sameGroup)*LEVEL_MULT[level]);
 me.money-=rent;if(me.money<0){me.money=0;me.bankrupt=true;}
 ownerData.money+=rent;
 SFX.badSound();
-addLog(`💸 ${me.name} pays $${rent} rent to ${ownerData.name} for ${tile.name}!`,'glog-rent');
+addLog(`💸 ${me.name} pays $${rent} rent to ${ownerData.name} for ${tile.name} (Lv${level})!`,'glog-rent');
 await update(roomRef,{[`players/${myUserId}`]:me,[`players/${owner}`]:ownerData});
-showInfoModal(`Rent Paid!`,`You paid $${rent} to ${ownerData.name} for landing on ${tile.name}`);}
-else addLog(`🏡 ${me.name} is home at ${tile.name}`,'glog-system');
+showInfoModal(`Rent Paid!`,`You paid $${rent} to ${ownerData.name} for ${tile.name} (Level ${level})`);}
+else{
+// Own property — offer upgrade
+if(level<3){
+const upgCost=Math.round(tile.price*(level===1?0.5:0.75));
+const doUpg=await showUpgradeModal(tile,level,upgCost);
+if(doUpg&&me.money>=upgCost){me.money-=upgCost;
+SFX.coinSound();
+await update(roomRef,{[`players/${myUserId}`]:me,[`properties/${tile.id}`]:{uid:myUserId,level:level+1}});
+addLog(`⬆️ ${me.name} upgraded ${tile.name} to Level ${level+1}!`,'glog-buy');}
+else addLog(`🏡 ${me.name} is home at ${tile.name} (Lv${level})`,'glog-system');}
+else addLog(`🏡 ${me.name} is home at ${tile.name} (MAX Lv3)`,'glog-system');}
 await nextTurn(r,pKeys);}
 }
 
@@ -350,7 +380,16 @@ await update(roomRef,{turnIndex:next,turnPlayer:pKeys[next]});}
 // ===== MODALS =====
 function showBuyModal(tile){return new Promise(res=>{
 $('buyModalTitle').textContent=`Buy ${tile.name}?`;
-$('buyModalDesc').textContent=`Price: $${tile.price} | Rent: $${tile.rent}`;
+$('buyModalDesc').textContent=`Price: $${tile.price} | Base Rent: $${tile.rent}`;
+$('buyModal').classList.add('show');
+$('btnBuyYes').onclick=()=>{$('buyModal').classList.remove('show');res(true);};
+$('btnBuyNo').onclick=()=>{$('buyModal').classList.remove('show');res(false);};});}
+
+function showUpgradeModal(tile,curLv,cost){return new Promise(res=>{
+$('buyModalTitle').textContent=`⬆️ Upgrade ${tile.name}?`;
+const LEVEL_MULT=[0,1,2.5,5];
+const newRent=Math.round(tile.rent*LEVEL_MULT[curLv+1]);
+$('buyModalDesc').textContent=`Level ${curLv} → ${curLv+1} | Cost: $${cost} | New Rent: $${newRent}`;
 $('buyModal').classList.add('show');
 $('btnBuyYes').onclick=()=>{$('buyModal').classList.remove('show');res(true);};
 $('btnBuyNo').onclick=()=>{$('buyModal').classList.remove('show');res(false);};});}
@@ -371,6 +410,12 @@ setTimeout(()=>$('mToast').style.display='none',3000);}
 
 $('btnBackToLobby').onclick=()=>{showScreen('lobby');listenRooms();
 $('createRoomSection').style.display='block';$('waitingRoomSection').style.display='none';};
+
+$('btnLogout').onclick=()=>{
+localStorage.removeItem('gameSession');
+myUserId='';myUsername='';
+showScreen('login');
+};
 
 // Init — check for existing session from Stickman or previous Monopoly login
 (async function initApp(){

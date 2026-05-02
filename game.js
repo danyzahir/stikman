@@ -1155,6 +1155,14 @@ $('btnSurrender').onclick = doSurrender;
 $('btnShop').onclick = openShop;
 $('btnCloseShop').onclick = closeShop;
 
+$('btnLogout').onclick = () => {
+  localStorage.removeItem('gameSession');
+  if (myUserId) remove(ref(db, 'users/' + myUserId)).catch(() => {});
+  myUserId = '';
+  META = { ...defaultMeta };
+  showScreen('login');
+};
+
 // Init — check for existing session
 (async function initApp() {
   const saved = localStorage.getItem('gameSession');
