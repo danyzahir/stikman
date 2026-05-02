@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Monopoly Online – Multiplayer Board Game</title>
+<meta name="description" content="Game Monopoli online multiplayer. Main bareng teman secara real-time! Beli properti, bayar sewa, dan jadilah yang terkaya!"/>
+<link rel="stylesheet" href="monopoly.css"/>
+</head>
+<body>
+
+<!-- ====== LOGIN SCREEN ====== -->
+<div id="loginScreen" class="screen active" style="flex-direction:column; justify-content:center; align-items:center">
+  <h1 style="color:#f0c040; margin-bottom:10px; font-size:2.6rem">MONOPOLY<br>ONLINE</h1>
+  <p id="authSubtitle" style="color:#888; margin-bottom:20px">Login to your account</p>
+
+  <div id="authForm" style="display:flex; flex-direction:column; gap:10px; width:100%; max-width:300px">
+    <input type="email" id="emailInput" placeholder="Email Address" style="display:none; padding:12px; border-radius:8px; border:2px solid #ffffff30; background:#1a1a2e; color:#fff; font-size:1.1rem; outline:none; text-align:center; font-family:'Rajdhani',sans-serif; font-weight:bold" autocomplete="off" />
+    <input type="text" id="usernameInput" placeholder="Username" style="padding:12px; border-radius:8px; border:2px solid #ffffff30; background:#1a1a2e; color:#fff; font-size:1.1rem; outline:none; text-align:center; font-family:'Rajdhani',sans-serif; font-weight:bold" autocomplete="off" />
+    <input type="password" id="passwordInput" placeholder="Password" style="padding:12px; border-radius:8px; border:2px solid #ffffff30; background:#1a1a2e; color:#fff; font-size:1.1rem; outline:none; text-align:center; font-family:'Rajdhani',sans-serif; font-weight:bold" autocomplete="off" />
+    <button id="btnSubmitAuth" style="padding:12px 24px; background:linear-gradient(135deg,#f0c040,#e08000); color:#0a0a0f; font-size:1.1rem; border-radius:10px; letter-spacing:2px">LOGIN</button>
+  </div>
+
+  <p id="loginStatus" style="color:#66bb6a; margin-top:15px; font-size:0.9rem; display:none"></p>
+
+  <div style="margin-top:20px; font-size:0.9rem; color:#888">
+    <span id="authToggleText">Don't have an account?</span>
+    <a href="#" id="btnToggleAuth" style="color:#4fc3f7; text-decoration:none; font-weight:bold">Register Here</a>
+  </div>
+
+  <a href="index.html" style="margin-top:30px; color:#888; font-size:.85rem; text-decoration:none">← Back to Stickman Battle</a>
+</div>
+
+<!-- ====== LOBBY SCREEN ====== -->
+<div id="lobbyScreen" class="screen">
+  <div class="lobby-container">
+    <div class="lobby-title">🎩 MONOPOLY</div>
+    <div class="lobby-subtitle">ONLINE MULTIPLAYER</div>
+
+    <a href="index.html" class="back-link">← Back to Stickman Battle</a>
+
+    <!-- Create Room -->
+    <div class="room-create-section" id="createRoomSection">
+      <h3>CREATE ROOM</h3>
+      <div class="player-count-select">
+        <button class="player-count-btn active" data-count="2">2 Players</button>
+        <button class="player-count-btn" data-count="3">3 Players</button>
+        <button class="player-count-btn" data-count="4">4 Players</button>
+      </div>
+      <button id="btnCreateRoom">CREATE ROOM</button>
+    </div>
+
+    <!-- Waiting Room (hidden until created/joined) -->
+    <div id="waitingRoomSection">
+      <h3>ROOM — <span id="roomCode">-</span></h3>
+      <div id="waitingPlayers" class="waiting-players"></div>
+      <button id="btnStartGame" disabled>START GAME</button>
+      <br/>
+      <button id="btnLeaveRoom">LEAVE ROOM</button>
+    </div>
+
+    <!-- Room List -->
+    <div class="room-list-section">
+      <h3>🟢 AVAILABLE ROOMS</h3>
+      <div id="roomList">
+        <div class="no-rooms">No rooms available. Create one!</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== GAME SCREEN ====== -->
+<div id="gameScreen" class="screen">
+  <!-- Top bar -->
+  <div class="game-top-bar">
+    <div class="turn-indicator" id="turnIndicator">YOUR TURN</div>
+    <div class="dice-area">
+      <div class="dice-display" id="dice1">🎲</div>
+      <div class="dice-display" id="dice2">🎲</div>
+      <button id="btnRollDice">ROLL DICE</button>
+    </div>
+  </div>
+
+  <!-- Board -->
+  <div class="board-wrapper">
+    <div class="board-grid" id="boardGrid"></div>
+    <div class="board-center">
+      <div class="board-center-title">MONOPOLY</div>
+      <div class="board-center-sub">ONLINE</div>
+    </div>
+  </div>
+
+  <!-- Players panel -->
+  <div class="players-panel" id="playersPanel"></div>
+
+  <!-- Game log -->
+  <div id="gameLog"></div>
+</div>
+
+<!-- ====== BUY PROPERTY MODAL ====== -->
+<div class="modal-overlay" id="buyModal">
+  <div class="modal-box">
+    <h3 id="buyModalTitle">BUY PROPERTY?</h3>
+    <p id="buyModalDesc">Buy this property for $200?</p>
+    <div class="modal-actions">
+      <button class="modal-btn-yes" id="btnBuyYes">BUY</button>
+      <button class="modal-btn-no" id="btnBuyNo">SKIP</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== INFO MODAL (Rent paid, etc.) ====== -->
+<div class="modal-overlay" id="infoModal">
+  <div class="modal-box" style="border-color:#4fc3f7">
+    <h3 id="infoModalTitle" style="color:#4fc3f7">INFO</h3>
+    <p id="infoModalDesc">Something happened.</p>
+    <div class="modal-actions">
+      <button class="modal-btn-yes" id="btnInfoOk" style="background:linear-gradient(90deg,#1565c0,#42a5f5)">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== TOAST ====== -->
+<div id="mToast"><span id="mToastMsg">Message</span></div>
+
+<!-- ====== END SCREEN ====== -->
+<div id="endScreen" class="screen">
+  <div id="endTitle">🏆 WINNER!</div>
+  <p id="endMsg">Player wins the game!</p>
+  <button id="btnBackToLobby">BACK TO LOBBY</button>
+</div>
+
+<script type="module" src="monopoly.js"></script>
+</body>
+</html>

@@ -572,6 +572,131 @@ function animFighter(id, cls, ms=400) {
 
 function delay(ms) { return new Promise(res => setTimeout(res, ms)); }
 
+// ========== SOUND FX (Web Audio API) ==========
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+// Pre-init audio on first user interaction (browser autoplay policy)
+document.addEventListener('click', function _initAudio() {
+  getAudioCtx();
+  document.removeEventListener('click', _initAudio);
+}, { once: true });
+document.addEventListener('touchstart', function _initAudioT() {
+  getAudioCtx();
+  document.removeEventListener('touchstart', _initAudioT);
+}, { once: true });
+
+const SFX = {
+  // Dice tick sound (short click)
+  diceTick() {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(800 + Math.random() * 400, ctx.currentTime);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.06);
+  },
+
+  // Dice land/settle sound (satisfying thud)
+  diceLand() {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(220, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.2);
+    // Add noise burst for impact
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.08, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 3);
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf;
+    const nGain = ctx.createGain();
+    noise.connect(nGain); nGain.connect(ctx.destination);
+    nGain.gain.setValueAtTime(0.35, ctx.currentTime);
+    noise.start(ctx.currentTime);
+  },
+
+  // Critical/high roll fanfare
+  diceCrit() {
+    const ctx = getAudioCtx();
+    [523, 659, 784].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.08);
+      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.08);
+      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + i * 0.08 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.08 + 0.2);
+      osc.start(ctx.currentTime + i * 0.08);
+      osc.stop(ctx.currentTime + i * 0.08 + 0.25);
+    });
+  },
+
+  // Attack hit sound
+  attackHit() {
+    const ctx = getAudioCtx();
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.15, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2);
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf;
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass'; filter.frequency.value = 2000;
+    noise.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+    noise.start(ctx.currentTime);
+  },
+
+  // Heal sound (rising chime)
+  heal() {
+    const ctx = getAudioCtx();
+    [440, 554, 659].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.1);
+      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.1);
+      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + i * 0.1 + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.3);
+      osc.start(ctx.currentTime + i * 0.1);
+      osc.stop(ctx.currentTime + i * 0.1 + 0.35);
+    });
+  },
+
+  // Defend/shield sound (metallic ping)
+  defend() {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(1200, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.35, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.4);
+  }
+};
+
 // ========== DICE SYSTEM ==========
 // Multipliers per roll: 1=weak, 6=devastating
 const DICE_MULT = [0, 0.35, 0.6, 0.85, 1.15, 1.5, 2.0];
@@ -592,6 +717,7 @@ function animateDice(elId, finalRoll) {
       const fake = Math.floor(Math.random()*6)+1;
       el.querySelector('.dice-face').textContent = DICE_FACE[fake];
       el.querySelector('.dice-num').textContent = fake;
+      SFX.diceTick();
       t += 80;
       if (t >= 700) {
         clearInterval(iv);
@@ -599,6 +725,8 @@ function animateDice(elId, finalRoll) {
         el.querySelector('.dice-num').textContent = finalRoll;
         el.classList.remove('spinning');
         el.classList.add('settled');
+        SFX.diceLand();
+        if (finalRoll >= 5) SFX.diceCrit();
         setTimeout(() => el.classList.remove('settled'), 400);
         res();
       }
@@ -639,6 +767,7 @@ async function doAttack() {
 
   log(`🎲 <b>You</b> rolled <b>${DICE_FACE[roll]} ${roll}</b> — <span class="${rollColorClass}-txt">${DICE_LABEL[roll]}!</span> Attack <b>${e.name}</b> for <b class="dmg-red">${dmg} DMG</b>`, 'log-player');
   await animFighter('playerFighter','player-attack-anim');
+  SFX.attackHit();
   await animFighter('enemyFighter','hit-anim',300);
   showPopup(`-${dmg}`, 520, 'dmg-red');
   e.hp = Math.max(0, e.hp - dmg);
@@ -665,6 +794,7 @@ async function doDefend() {
   await delay(200);
 
   log(`🎲 <b>You</b> rolled <b>${DICE_FACE[roll]} ${roll}</b> — <span class="${rollColorClass}-txt">${DICE_LABEL[roll]} BLOCK!</span> Shield blocks <b class="dmg-blue">${Math.round(blockPct*100)}%</b> damage`, 'log-defend');
+  SFX.defend();
   await animFighter('playerFighter','defend-anim');
   renderAll();
   await delay(300);
@@ -681,6 +811,7 @@ async function doHeal() {
   p.hp = Math.min(p.maxHp, p.hp + heal);
   const actual = p.hp - before;
   log(`💊 <b>You</b> drink a potion and recover <b class="dmg-green">${actual} HP</b>`, 'log-heal');
+  SFX.heal();
   await animFighter('playerFighter','heal-anim');
   showPopup(`+${actual}`, 120, 'dmg-green');
   renderAll();
@@ -717,9 +848,9 @@ async function enemyTurn() {
   }
 
   await animFighter('enemyFighter','enemy-attack-anim');
-  if (eDmg > 0) await animFighter('playerFighter','hit-anim',300);
+  if (eDmg > 0) { SFX.attackHit(); await animFighter('playerFighter','hit-anim',300); }
   if (eDmg > 0) showPopup(`-${eDmg}`, 120, 'dmg-red');
-  else showPopup('BLOCKED!', 120, 'dmg-blue');
+  else { SFX.defend(); showPopup('BLOCKED!', 120, 'dmg-blue'); }
   p.hp = Math.max(0, p.hp - eDmg);
   G.defending = false;
   G.defendRoll = 0;
@@ -1005,6 +1136,8 @@ $('btnSubmitAuth').onclick = async () => {
   }
 
   $('loginStatus').textContent = "Success! Entering game...";
+  // Save session to localStorage for cross-game login
+  localStorage.setItem('gameSession', JSON.stringify({ userId: myUserId, username: META.username }));
   initFirebasePresence();
   showScreen('start');
 };
@@ -1022,5 +1155,22 @@ $('btnSurrender').onclick = doSurrender;
 $('btnShop').onclick = openShop;
 $('btnCloseShop').onclick = closeShop;
 
-// Init
-showScreen('login');
+// Init — check for existing session
+(async function initApp() {
+  const saved = localStorage.getItem('gameSession');
+  if (saved) {
+    try {
+      const session = JSON.parse(saved);
+      if (session.userId && session.username) {
+        myUserId = session.userId;
+        const snap = await get(ref(db, 'playerData/' + myUserId));
+        if (snap.exists()) META = snap.val();
+        else META = { ...defaultMeta, username: session.username };
+        initFirebasePresence();
+        showScreen('start');
+        return;
+      }
+    } catch(e) {}
+  }
+  showScreen('login');
+})();
