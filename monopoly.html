@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Monopoly Online – Multiplayer Board Game</title>
 <meta name="description" content="Game Monopoli online multiplayer. Main bareng teman secara real-time! Beli properti, bayar sewa, dan jadilah yang terkaya!"/>
-<link rel="stylesheet" href="monopoly.css"/>
+<link rel="stylesheet" href="monopoly.css?v=2"/>
 </head>
 <body>
 
@@ -34,11 +34,11 @@
 <!-- ====== LOBBY SCREEN ====== -->
 <div id="lobbyScreen" class="screen">
   <div class="lobby-container">
-    <div class="lobby-title">🎩 MONOPOLY</div>
+    <div class="lobby-title"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-top:-5px"><path d="M6 16v-6a6 6 0 0112 0v6M4 16h16M7 20h10v-4H7v4z"/></svg> MONOPOLY</div>
     <div class="lobby-subtitle">ONLINE MULTIPLAYER</div>
 
     <a href="index.html" class="back-link">← Back to Stickman Battle</a>
-    <button id="btnLogout" style="background:transparent; border:1px solid #ef535040; color:#ef5350; padding:8px 20px; border-radius:8px; font-size:.85rem; letter-spacing:1px">🚪 LOGOUT</button>
+    <button id="btnLogout" style="background:transparent; border:1px solid #ef535040; color:#ef5350; padding:8px 20px; border-radius:8px; font-size:.85rem; letter-spacing:1px"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg> LOGOUT</button>
 
     <!-- Create Room -->
     <div class="room-create-section" id="createRoomSection">
@@ -62,7 +62,7 @@
 
     <!-- Room List -->
     <div class="room-list-section">
-      <h3>🟢 AVAILABLE ROOMS</h3>
+      <h3><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="#66bb6a" stroke-width="2" style="vertical-align:-2px"><circle cx="12" cy="12" r="8" fill="#66bb6a40"/></svg> AVAILABLE ROOMS</h3>
       <div id="roomList">
         <div class="no-rooms">No rooms available. Create one!</div>
       </div>
@@ -76,18 +76,20 @@
   <div class="game-top-bar">
     <div class="turn-indicator" id="turnIndicator">YOUR TURN</div>
     <div class="dice-area">
-      <div class="dice-display" id="dice1">🎲</div>
-      <div class="dice-display" id="dice2">🎲</div>
+      <div class="dice-display" id="dice1"></div>
+      <div class="dice-display" id="dice2"></div>
       <button id="btnRollDice">ROLL DICE</button>
     </div>
   </div>
 
   <!-- Board -->
-  <div class="board-wrapper">
-    <div class="board-grid" id="boardGrid"></div>
-    <div class="board-center">
-      <div class="board-center-title">MONOPOLY</div>
-      <div class="board-center-sub">ONLINE</div>
+  <div class="board-scroll-area" style="width: 100%; overflow: auto; padding: 4px 0;">
+    <div class="board-wrapper">
+      <div class="board-grid" id="boardGrid"></div>
+      <div class="board-center">
+        <div class="board-center-title"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-top:-5px"><path d="M6 16v-6a6 6 0 0112 0v6M4 16h16M7 20h10v-4H7v4z"/></svg> MONOPOLY</div>
+        <div class="board-center-sub">ONLINE</div>
+      </div>
     </div>
   </div>
 
@@ -131,6 +133,6 @@
   <button id="btnBackToLobby">BACK TO LOBBY</button>
 </div>
 
-<script type="module" src="monopoly.js?v=3"></script>
+<script type="module" src="monopoly.js?v=4"></script>
 </body>
 </html>

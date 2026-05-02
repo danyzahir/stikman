@@ -1,5 +1,5 @@
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import{getDatabase,ref,set,onValue,remove,get,update,push}from"https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+import{getDatabase,ref,set,onValue,remove,get,update,push,onDisconnect}from"https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 const app=initializeApp({apiKey:"AIzaSyBwooreBGBy9WcLylZL8IZJabmoGLjqqf8",authDomain:"stikman-a8811.firebaseapp.com",projectId:"stikman-a8811",storageBucket:"stikman-a8811.firebasestorage.app",messagingSenderId:"287593112770",appId:"1:287593112770:web:53eb52732c8f3a483d475b"});
 const db=getDatabase(app);
 let myUserId="",myUsername="";
@@ -19,39 +19,57 @@ coinSound(){const c=getAudioCtx();[880,1100].forEach((f,i)=>{const o=c.createOsc
 badSound(){const c=getAudioCtx(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sawtooth';o.frequency.setValueAtTime(300,c.currentTime);o.frequency.exponentialRampToValueAtTime(100,c.currentTime+0.2);g.gain.setValueAtTime(0.1,c.currentTime);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.25);o.start(c.currentTime);o.stop(c.currentTime+0.3);}
 };
 
+// ===== SVG ICONS =====
+const MSVG={
+start:`<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>`,
+chest:`<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M12 8v13"/><path d="M19 12H5"/><path d="M10 12v-2a2 2 0 014 0v2"/></svg>`,
+chance:`<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>`,
+tax:`<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v1M12 15v1M9.5 10.5C9.5 9.1 10.6 8 12 8s2.5 1.1 2.5 2.5c0 1.2-1.5 1.8-2.5 1.8s-2.5.9-2.5 2.2S10.6 16 12 16s2.5-1.1 2.5-2.5"/></svg>`,
+jail:`<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16"/><path d="M12 4v16"/><path d="M16 4v16"/></svg>`,
+free:`<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 16V8h4a2 2 0 010 4H9"/></svg>`,
+goJail:`<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>`,
+dice:`<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/><circle cx="16" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="16" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>`,
+home:`<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+pay:`<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16 12 12 8 8 12"/><line x1="12" y1="16" x2="12" y2="8"/></svg>`,
+up:`<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>`,
+skip:`<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>`,
+cake:`<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-8a2 2 0 00-2-2H6a2 2 0 00-2 2v8"/><path d="M4 16s1-1 4-1 5 2 8 2 4-1 4-1"/><path d="M12 11V7"/><path d="M12 4h.01"/></svg>`,
+trophy:`<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10M5 4v5a2 2 0 002 2h10a2 2 0 002-2V4M6 9H4a2 2 0 01-2-2V5a2 2 0 012-2h2M18 9h2a2 2 0 002-2V5a2 2 0 00-2-2h-2M12 17a5 5 0 005-5V4H7v8a5 5 0 005 5z"/></svg>`
+};
+
 // BOARD TILES (32 tiles around the board)
 const TILES=[
-{id:0,name:"START",type:"corner",icon:"🏁"},
+{id:0,name:"START",type:"corner",icon:MSVG.start},
 {id:1,name:"Medan",type:"prop",price:60,rent:6,group:"brown",color:"#8B4513"},
-{id:2,name:"Chest",type:"chance",icon:"📦"},
+{id:2,name:"Chest",type:"chance",icon:MSVG.chest},
 {id:3,name:"Padang",type:"prop",price:80,rent:8,group:"brown",color:"#8B4513"},
-{id:4,name:"TAX",type:"tax",amount:100,icon:"💰"},
+{id:4,name:"TAX",type:"tax",amount:100,icon:MSVG.tax},
 {id:5,name:"Stasiun A",type:"prop",price:200,rent:25,group:"station",color:"#555"},
 {id:6,name:"Semarang",type:"prop",price:100,rent:10,group:"cyan",color:"#00bcd4"},
-{id:7,name:"Chance",type:"chance",icon:"❓"},
+{id:7,name:"Chance",type:"chance",icon:MSVG.chance},
 {id:8,name:"Solo",type:"prop",price:120,rent:12,group:"cyan",color:"#00bcd4"},
-{id:9,name:"JAIL",type:"corner",icon:"🔒"},
+{id:9,name:"JAIL",type:"corner",icon:MSVG.jail},
 {id:10,name:"Bandung",type:"prop",price:140,rent:14,group:"pink",color:"#e91e63"},
 {id:11,name:"Listrik",type:"prop",price:150,rent:18,group:"util",color:"#fdd835"},
 {id:12,name:"Bogor",type:"prop",price:160,rent:16,group:"pink",color:"#e91e63"},
-{id:13,name:"Chest",type:"chance",icon:"📦"},
+{id:13,name:"Chest",type:"chance",icon:MSVG.chest},
 {id:14,name:"Stasiun B",type:"prop",price:200,rent:25,group:"station",color:"#555"},
 {id:15,name:"Yogya",type:"prop",price:180,rent:18,group:"orange",color:"#ff9800"},
-{id:16,name:"FREE",type:"corner",icon:"🅿️"},
+{id:16,name:"FREE",type:"corner",icon:MSVG.free},
 {id:17,name:"Malang",type:"prop",price:200,rent:20,group:"orange",color:"#ff9800"},
-{id:18,name:"Chance",type:"chance",icon:"❓"},
+{id:18,name:"Chance",type:"chance",icon:MSVG.chance},
 {id:19,name:"Denpasar",type:"prop",price:220,rent:22,group:"red",color:"#f44336"},
-{id:20,name:"TAX",type:"tax",amount:150,icon:"💰"},
+{id:20,name:"TAX",type:"tax",amount:150,icon:MSVG.tax},
 {id:21,name:"Makassar",type:"prop",price:240,rent:24,group:"red",color:"#f44336"},
 {id:22,name:"Stasiun C",type:"prop",price:200,rent:25,group:"station",color:"#555"},
 {id:23,name:"Air",type:"prop",price:150,rent:18,group:"util",color:"#42a5f5"},
 {id:24,name:"Manado",type:"prop",price:260,rent:26,group:"green",color:"#4caf50"},
-{id:25,name:"GO JAIL",type:"corner",icon:"🚔"},
+{id:25,name:"GO JAIL",type:"corner",icon:MSVG.goJail},
 {id:26,name:"Surabaya",type:"prop",price:300,rent:30,group:"blue",color:"#1565c0"},
-{id:27,name:"Chance",type:"chance",icon:"❓"},
+{id:27,name:"Chance",type:"chance",icon:MSVG.chance},
 {id:28,name:"Balikpapan",type:"prop",price:280,rent:28,group:"green",color:"#4caf50"},
 {id:29,name:"Stasiun D",type:"prop",price:200,rent:25,group:"station",color:"#555"},
-{id:30,name:"Chest",type:"chance",icon:"📦"},
+{id:30,name:"Chest",type:"chance",icon:MSVG.chest},
 {id:31,name:"Jakarta",type:"prop",price:400,rent:50,group:"blue",color:"#1565c0"}
 ];
 
@@ -100,9 +118,11 @@ b.classList.add('active');selectedCount=+b.dataset.count;};});
 
 $('btnCreateRoom').onclick=async()=>{
 const roomId=myUserId+'_'+Date.now();
+const rRef=ref(db,'monopolyRooms/'+roomId);
 const roomData={host:myUserId,hostName:myUsername,maxPlayers:selectedCount,status:'waiting',
 players:{[myUserId]:{name:myUsername,index:0,money:1500,pos:0,bankrupt:false,jailTurns:0}}};
-await set(ref(db,'monopolyRooms/'+roomId),roomData);
+await set(rRef,roomData);
+onDisconnect(rRef).remove();
 joinRoom(roomId,true);};
 
 function listenRooms(){
@@ -141,7 +161,7 @@ $('btnStartGame').disabled=!(isHost&&pKeys.length>=2);});}
 $('btnLeaveRoom').onclick=()=>leaveRoom();
 async function leaveRoom(){
 if(currentRoom){
-if(isHost)await remove(ref(db,'monopolyRooms/'+currentRoom));
+if(isHost){onDisconnect(ref(db,'monopolyRooms/'+currentRoom)).cancel();await remove(ref(db,'monopolyRooms/'+currentRoom));}
 else await remove(ref(db,'monopolyRooms/'+currentRoom+'/players/'+myUserId));}
 currentRoom=null;roomRef=null;isHost=false;if(unsubRoom){unsubRoom();unsubRoom=null;}
 $('createRoomSection').style.display='block';$('waitingRoomSection').style.display='none';}
@@ -184,7 +204,7 @@ const t=TILES[cellMap[key]];div.className='board-cell'+(t.type==='corner'?' corn
 div.id='cell-'+t.id;
 let inner='';
 if(t.color)inner+=`<div class="cell-color-bar" style="background:${t.color}"></div>`;
-if(t.icon)inner+=`<div style="font-size:.7rem">${t.icon}</div>`;
+if(t.icon)inner+=`<div class="cell-icon">${t.icon}</div>`;
 inner+=`<div class="cell-name">${t.name}</div>`;
 if(t.price)inner+=`<div class="cell-price">$${t.price}</div>`;
 div.innerHTML=inner;
@@ -199,7 +219,7 @@ const currentTurn=r.turnPlayer;
 const isMyTurn=currentTurn===myUserId;
 
 // Turn indicator
-$('turnIndicator').textContent=isMyTurn?'🎲 YOUR TURN':`⏳ ${r.players[currentTurn]?.name||'...'}'s TURN`;
+$('turnIndicator').innerHTML=isMyTurn?`${MSVG.dice} YOUR TURN`:`⏳ ${r.players[currentTurn]?.name||'...'}'s TURN`;
 $('turnIndicator').style.color=isMyTurn?'#f0c040':'#888';
 $('btnRollDice').disabled=!isMyTurn;
 
@@ -240,17 +260,26 @@ const propCount=r.properties?Object.values(r.properties).filter(x=>{const uid=ty
 ph+=`<div class="player-card ${active?'active-turn':''} ${p.bankrupt?'bankrupt':''}">
 <div class="pc-header"><div class="pc-dot" style="background:${PCOLORS[i]}"></div><div class="pc-name">${p.name}${pk===myUserId?' (You)':''}</div></div>
 <div class="pc-money">$${p.money}</div>
-<div class="pc-props">${propCount} properties${p.jailTurns>0?' | 🔒 Jail('+p.jailTurns+')':''}</div></div>`;});
+<div class="pc-props">${propCount} properties${p.jailTurns>0?` | ${MSVG.jail} Jail(${p.jailTurns})`:''}</div></div>`;});
 $('playersPanel').innerHTML=ph;
 
 // Check winner
 const alive=pKeys.filter(pk=>!r.players[pk].bankrupt);
 if(alive.length<=1&&pKeys.length>1){
-setTimeout(()=>{$('endTitle').textContent='🏆 '+r.players[alive[0]].name+' WINS!';
+setTimeout(()=>{$('endTitle').innerHTML=`${MSVG.trophy} ${r.players[alive[0]].name} WINS!`;
 $('endMsg').textContent='Game over! The last player standing wins!';showScreen('end');},1500);}
 }
 
-function dieFace(n){return['','⚀','⚁','⚂','⚃','⚄','⚅'][n]||'🎲';}
+function dieFace(n){
+if(n<1||n>6)return MSVG.dice;
+const d=['','<circle cx="12" cy="12" r="2" fill="currentColor"/>',
+'<circle cx="7" cy="7" r="2" fill="currentColor"/><circle cx="17" cy="17" r="2" fill="currentColor"/>',
+'<circle cx="7" cy="7" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="17" cy="17" r="2" fill="currentColor"/>',
+'<circle cx="7" cy="7" r="2" fill="currentColor"/><circle cx="17" cy="7" r="2" fill="currentColor"/><circle cx="7" cy="17" r="2" fill="currentColor"/><circle cx="17" cy="17" r="2" fill="currentColor"/>',
+'<circle cx="7" cy="7" r="2" fill="currentColor"/><circle cx="17" cy="7" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="7" cy="17" r="2" fill="currentColor"/><circle cx="17" cy="17" r="2" fill="currentColor"/>',
+'<circle cx="7" cy="6" r="2" fill="currentColor"/><circle cx="17" cy="6" r="2" fill="currentColor"/><circle cx="7" cy="12" r="2" fill="currentColor"/><circle cx="17" cy="12" r="2" fill="currentColor"/><circle cx="7" cy="18" r="2" fill="currentColor"/><circle cx="17" cy="18" r="2" fill="currentColor"/>'];
+return `<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/>${d[n]}</svg>`;
+}
 
 // ===== ROLL DICE =====
 $('btnRollDice').onclick=async()=>{
@@ -276,9 +305,9 @@ const pKeys=Object.keys(r.players);const me=r.players[myUserId];
 
 // Jail check
 if(me.jailTurns>0){
-if(d1===d2){me.jailTurns=0;addLog(`🔓 ${me.name} rolled doubles and escaped jail!`,'glog-system');}
-else{me.jailTurns--;if(me.jailTurns<=0){me.jailTurns=0;addLog(`🔓 ${me.name} served jail time, free now!`,'glog-system');}
-else{addLog(`🔒 ${me.name} still in jail (${me.jailTurns} turns left)`,'glog-system');
+if(d1===d2){me.jailTurns=0;addLog(`${MSVG.jail} ${me.name} rolled doubles and escaped jail!`,'glog-system');}
+else{me.jailTurns--;if(me.jailTurns<=0){me.jailTurns=0;addLog(`${MSVG.jail} ${me.name} served jail time, free now!`,'glog-system');}
+else{addLog(`${MSVG.jail} ${me.name} still in jail (${me.jailTurns} turns left)`,'glog-system');
 const ni=(r.turnIndex+1)%pKeys.length;let next=ni;
 while(r.players[pKeys[next]]?.bankrupt&&next!==r.turnIndex){next=(next+1)%pKeys.length;}
 await update(roomRef,{[`players/${myUserId}`]:me,lastDice:[d1,d2],turnIndex:next,turnPlayer:pKeys[next]});return;}}
@@ -299,7 +328,7 @@ await update(roomRef,{_walkingPlayer:null});
 
 me.pos=newPos;
 const tile=TILES[newPos];
-addLog(`🎲 ${me.name} rolled ${d1}+${d2}=${total}, landed on ${tile.name}`,'glog-system');
+addLog(`${MSVG.dice} ${me.name} rolled ${d1}+${d2}=${total}, landed on ${tile.name}`,'glog-system');
 
 await delay(200);
 await handleTile(tile,me,r,pKeys);
@@ -307,28 +336,28 @@ await handleTile(tile,me,r,pKeys);
 
 async function handleTile(tile,me,r,pKeys){
 if(tile.type==='corner'){
-if(tile.id===25){me.pos=9;me.jailTurns=3;addLog(`🚔 ${me.name} goes to JAIL!`,'glog-system');
+if(tile.id===25){me.pos=9;me.jailTurns=3;addLog(`${MSVG.goJail} ${me.name} goes to JAIL!`,'glog-system');
 await update(roomRef,{[`players/${myUserId}`]:me});await nextTurn(r,pKeys);return;}
 if(tile.id===0&&me.pos===0){}
 await nextTurn(r,pKeys);return;}
 
 if(tile.type==='tax'){me.money-=tile.amount;if(me.money<0){me.money=0;me.bankrupt=true;}
-addLog(`💰 ${me.name} pays $${tile.amount} tax!`,'glog-tax');
+addLog(`${MSVG.tax} ${me.name} pays $${tile.amount} tax!`,'glog-tax');
 await update(roomRef,{[`players/${myUserId}`]:me});await nextTurn(r,pKeys);return;}
 
 if(tile.type==='chance'){
 const ch=CHANCES[Math.floor(Math.random()*CHANCES.length)];
 const m=ch.match(/[+-]\$(\d+)/);
-if(ch.includes('Maju 3')){me.pos=(me.pos+3)%32;addLog(`❓ ${ch}`,'glog-chance');
+if(ch.includes('Maju 3')){me.pos=(me.pos+3)%32;addLog(`${MSVG.chance} ${ch}`,'glog-chance');
 await update(roomRef,{[`players/${myUserId}`]:me});await nextTurn(r,pKeys);return;}
-if(ch.includes('Mundur 2')){me.pos=(me.pos-2+32)%32;addLog(`❓ ${ch}`,'glog-chance');
+if(ch.includes('Mundur 2')){me.pos=(me.pos-2+32)%32;addLog(`${MSVG.chance} ${ch}`,'glog-chance');
 await update(roomRef,{[`players/${myUserId}`]:me});await nextTurn(r,pKeys);return;}
 if(ch.includes('Setiap pemain')){
 for(let pk of pKeys){if(pk===myUserId||r.players[pk].bankrupt)continue;
 r.players[pk].money-=25;me.money+=25;await update(roomRef,{[`players/${pk}`]:r.players[pk]});}
-addLog(`🎂 ${ch}`,'glog-chance');await update(roomRef,{[`players/${myUserId}`]:me});await nextTurn(r,pKeys);return;}
+addLog(`${MSVG.cake} ${ch}`,'glog-chance');await update(roomRef,{[`players/${myUserId}`]:me});await nextTurn(r,pKeys);return;}
 if(m){const amt=parseInt(m[1]);if(ch.includes('+'))me.money+=amt;else{me.money-=amt;if(me.money<0){me.money=0;me.bankrupt=true;}}
-addLog(`❓ ${ch}`,'glog-chance');}
+addLog(`${MSVG.chance} ${ch}`,'glog-chance');}
 await update(roomRef,{[`players/${myUserId}`]:me});await nextTurn(r,pKeys);return;}
 
 if(tile.type==='prop'){
@@ -341,8 +370,8 @@ const buy=await showBuyModal(tile);
 if(buy&&me.money>=tile.price){me.money-=tile.price;
 SFX.coinSound();
 await update(roomRef,{[`players/${myUserId}`]:me,[`properties/${tile.id}`]:{uid:myUserId,level:1}});
-addLog(`🏠 ${me.name} bought ${tile.name} for $${tile.price}!`,'glog-buy');}
-else addLog(`⏭️ ${me.name} skipped ${tile.name}`,'glog-system');
+addLog(`${MSVG.home} ${me.name} bought ${tile.name} for $${tile.price}!`,'glog-buy');}
+else addLog(`${MSVG.skip} ${me.name} skipped ${tile.name}`,'glog-system');
 }else if(owner!==myUserId){
 // Pay rent (multiplied by level)
 const ownerData=r.players[owner];
@@ -354,7 +383,7 @@ let rent=Math.round(tile.rent*Math.max(1,sameGroup)*LEVEL_MULT[level]);
 me.money-=rent;if(me.money<0){me.money=0;me.bankrupt=true;}
 ownerData.money+=rent;
 SFX.badSound();
-addLog(`💸 ${me.name} pays $${rent} rent to ${ownerData.name} for ${tile.name} (Lv${level})!`,'glog-rent');
+addLog(`${MSVG.pay} ${me.name} pays $${rent} rent to ${ownerData.name} for ${tile.name} (Lv${level})!`,'glog-rent');
 await update(roomRef,{[`players/${myUserId}`]:me,[`players/${owner}`]:ownerData});
 showInfoModal(`Rent Paid!`,`You paid $${rent} to ${ownerData.name} for ${tile.name} (Level ${level})`);}
 else{
@@ -365,9 +394,9 @@ const doUpg=await showUpgradeModal(tile,level,upgCost);
 if(doUpg&&me.money>=upgCost){me.money-=upgCost;
 SFX.coinSound();
 await update(roomRef,{[`players/${myUserId}`]:me,[`properties/${tile.id}`]:{uid:myUserId,level:level+1}});
-addLog(`⬆️ ${me.name} upgraded ${tile.name} to Level ${level+1}!`,'glog-buy');}
-else addLog(`🏡 ${me.name} is home at ${tile.name} (Lv${level})`,'glog-system');}
-else addLog(`🏡 ${me.name} is home at ${tile.name} (MAX Lv3)`,'glog-system');}
+addLog(`${MSVG.up} ${me.name} upgraded ${tile.name} to Level ${level+1}!`,'glog-buy');}
+else addLog(`${MSVG.home} ${me.name} is home at ${tile.name} (Lv${level})`,'glog-system');}
+else addLog(`${MSVG.home} ${me.name} is home at ${tile.name} (MAX Lv3)`,'glog-system');}
 await nextTurn(r,pKeys);}
 }
 
@@ -386,7 +415,7 @@ $('btnBuyYes').onclick=()=>{$('buyModal').classList.remove('show');res(true);};
 $('btnBuyNo').onclick=()=>{$('buyModal').classList.remove('show');res(false);};});}
 
 function showUpgradeModal(tile,curLv,cost){return new Promise(res=>{
-$('buyModalTitle').textContent=`⬆️ Upgrade ${tile.name}?`;
+$('buyModalTitle').innerHTML=`${MSVG.up} Upgrade ${tile.name}?`;
 const LEVEL_MULT=[0,1,2.5,5];
 const newRent=Math.round(tile.rent*LEVEL_MULT[curLv+1]);
 $('buyModalDesc').textContent=`Level ${curLv} → ${curLv+1} | Cost: $${cost} | New Rent: $${newRent}`;

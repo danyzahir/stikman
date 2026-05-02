@@ -232,9 +232,12 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   display: flex; align-items: center; justify-content: center;
   font-size: 2rem; color: #f0c040;
   font-family: 'Orbitron', sans-serif;
+  font-size: 2rem;
   transition: all .3s;
   user-select: none;
 }
+.dice-display svg { width: 100%; height: 100%; }
+.turn-indicator svg { vertical-align: -2px; margin-right: 4px; }
 .dice-display.rolling {
   animation: diceRoll .1s linear infinite;
   border-color: #f0c040;
@@ -266,6 +269,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* THE BOARD */
 .board-wrapper {
   width: 100%; max-width: 95vw;
+  min-width: 750px; /* Minimum size to ensure readability */
   aspect-ratio: 1;
   position: relative;
   margin: 0 auto;
@@ -299,18 +303,24 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .board-cell:hover { border-color: #f0c04040; z-index: 5; }
 
 .cell-name {
-  font-weight: 700; font-size: .7rem; text-align: center;
+  font-weight: 700; font-size: .8rem; text-align: center;
   line-height: 1.2; color: #ccc;
   overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap; width: 100%;
 }
 .cell-price {
-  font-size: .6rem; color: #f0c040; font-weight: 700;
+  font-size: .75rem; color: #f0c040; font-weight: 700;
 }
 .cell-color-bar {
   position: absolute; top: 0; left: 0; right: 0;
   height: 5px; border-radius: 4px 4px 0 0;
 }
+.cell-icon {
+  margin-top: 2px;
+  margin-bottom: 2px;
+  display: flex; justify-content: center; align-items: center;
+}
+.cell-icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; opacity: 0.85; }
 
 /* Corner cells */
 .board-cell.corner {
@@ -451,6 +461,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .glog {
   padding: 3px 0; border-bottom: 1px solid #ffffff08; line-height: 1.3;
 }
+.glog svg { vertical-align: -2px; width: 1.1em; height: 1.1em; margin-right: 4px; }
 .glog-system { color: #f0c040; }
 .glog-buy { color: #66bb6a; }
 .glog-rent { color: #ef5350; }
@@ -537,34 +548,36 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
   #gameScreen { padding: 4px 0; gap: 4px; }
-  .board-wrapper { max-width: 100vw; width: 100vw; }
+  .board-wrapper { max-width: none; min-width: 700px; }
   .board-grid { gap: 1px; }
-  .board-cell { border-radius: 3px; padding: 2px; }
-  .cell-name { font-size: .6rem; }
-  .cell-price { font-size: .5rem; }
-  .player-token { width: 14px; height: 14px; }
+  .board-cell { border-radius: 3px; padding: 3px; }
+  .cell-name { font-size: .75rem; }
+  .cell-price { font-size: .7rem; }
+  .cell-icon svg { width: 20px; height: 20px; }
+  .player-token { width: 16px; height: 16px; }
   .board-center-title { font-size: 1.4rem; }
   .board-center-sub { font-size: .75rem; }
   .player-card { min-width: 44%; padding: 8px 10px; }
   .player-card .pc-money { font-size: .9rem; }
   .lobby-title { font-size: 1.5rem; }
   .dice-display { width: 44px; height: 44px; font-size: 1.5rem; }
-  #gameLog { height: 70px; font-size: .75rem; }
+  #gameLog { height: 80px; font-size: .75rem; }
   .game-top-bar { flex-wrap: wrap; gap: 4px; justify-content: center; padding: 2px 6px; }
   .players-panel { padding: 0 4px; }
 }
 
 @media (max-width: 480px) {
-  .board-wrapper { max-width: 100vw; width: 100vw; }
-  .board-cell { padding: 1px; }
-  .cell-name { font-size: .52rem; }
-  .cell-price { font-size: .44rem; }
+  .board-wrapper { min-width: 600px; }
+  .board-cell { padding: 2px; }
+  .cell-name { font-size: .7rem; }
+  .cell-price { font-size: .65rem; }
   .cell-color-bar { height: 3px; }
-  .player-token { width: 12px; height: 12px; border-width: 1px; }
-  .board-center-title { font-size: 1.1rem; }
+  .cell-icon svg { width: 18px; height: 18px; }
+  .player-token { width: 14px; height: 14px; border-width: 1px; }
+  .board-center-title { font-size: 1.2rem; }
   .board-center-sub { font-size: .6rem; }
   .players-panel { gap: 4px; padding: 0 2px; }
   .player-card { min-width: 47%; padding: 6px 8px; }
-  .board-cell.corner .cell-name { font-size: .55rem; }
-  .cell-level { font-size: .4rem; }
+  .board-cell.corner .cell-name { font-size: .7rem; }
+  .cell-level { font-size: .5rem; }
 }
